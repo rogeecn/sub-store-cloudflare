@@ -8,6 +8,8 @@
 !.env.example
 !.env.*.example
 .open-source-denylist.local
+wrangler.deploy.local.jsonc
+cloudflare/wrangler.deploy.local.jsonc
 
 # Dependency and build output
 **/node_modules/
