@@ -299,13 +299,11 @@ export function renderAdminHtml() {
 
     .workspace {
       display: grid;
-      gap: 12px;
+      gap: 16px;
       align-items: start;
     }
-    @media screen and (min-width: 940px) {
-      .workspace.has-editor { grid-template-columns: minmax(0, 1fr) minmax(340px, 0.78fr); }
-      .editor-panel { position: sticky; top: 110px; }
-    }
+    .editor-panel { width: 100%; }
+    .workspace.with-editor { margin-top: 4px; padding-top: 16px; border-top: 1px dashed var(--divider-color); }
 
     .section-title {
       display: flex;
@@ -480,27 +478,33 @@ export function renderAdminHtml() {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .editor-tabs {
+    .form.editor-form { padding: 0; gap: 0; }
+    .editor-section { border-top: 1px solid var(--divider-color); }
+    .editor-section:first-child { border-top: 0; }
+    .editor-section-header {
       display: flex;
-      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: space-between;
       gap: 10px;
-      padding: 8px 11px 0;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .editor-tabs::-webkit-scrollbar { display: none; }
-    .editor-tab {
-      flex: 0 0 auto;
-      padding: 7px 2px 6px;
-      border-bottom: 1px solid transparent;
+      width: 100%;
+      padding: 12px 13px;
       color: var(--second-text-color);
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 13px;
+      font-weight: 760;
+      text-align: left;
     }
-    .editor-tab.active {
-      border-bottom-color: var(--primary-color);
-      color: var(--primary-color);
+    .editor-section-header:hover { background: rgba(71, 142, 242, 0.06); color: var(--primary-color); }
+    .editor-section-header svg {
+      flex: 0 0 auto;
+      width: 14px;
+      height: 14px;
+      color: var(--comment-text-color);
+      transition: transform 0.18s ease;
     }
+    .editor-section.open > .editor-section-header { color: var(--primary-color); }
+    .editor-section.open > .editor-section-header svg { transform: rotate(90deg); color: var(--primary-color); }
+    .editor-section-body { padding: 0 13px 14px; display: grid; gap: 10px; }
+    .editor-section:not(.open) > .editor-section-body { display: none; }
     .form {
       display: grid;
       gap: 10px;
@@ -537,11 +541,6 @@ export function renderAdminHtml() {
       line-height: 1.55;
     }
     .field textarea.tall { min-height: 220px; }
-    .two-col {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 9px;
-    }
     .switch-row {
       display: flex;
       align-items: center;
@@ -614,13 +613,17 @@ export function renderAdminHtml() {
     }
     .form-actions {
       position: sticky;
-      bottom: 0;
+      bottom: calc(58px + var(--safe-bottom));
       z-index: 20;
       display: grid;
       grid-template-columns: 1fr 1.6fr;
       gap: 8px;
-      padding-top: 6px;
+      padding: 10px 13px 8px;
+      border-top: 1px solid var(--divider-color);
       background: var(--card-color);
+    }
+    @media screen and (min-width: 768px) {
+      .form-actions { bottom: 0; }
     }
 
     .backup-panel textarea {
@@ -714,7 +717,6 @@ export function renderAdminHtml() {
       .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .toolbar { grid-template-columns: 1fr; }
       .toolbar .primary-button { width: 100%; }
-      .two-col { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -726,6 +728,7 @@ export function renderAdminHtml() {
       </div>
       <div id="navTitle" class="nav-title">Sub-Store</div>
       <div class="nav-actions">
+        <button id="logoutBtn" class="icon-button" type="button" title="退出登录" aria-label="退出登录"></button>
         <button id="refreshBtn" class="icon-button" type="button" title="刷新" aria-label="刷新"></button>
         <button id="newBtnTop" class="icon-button" type="button" title="新建" aria-label="新建"></button>
       </div>
@@ -757,6 +760,17 @@ export function renderAdminHtml() {
 
   <div id="toast" class="toast"></div>
 
+  <div id="confirmModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <h2 id="confirmTitle">确认操作</h2>
+      <p id="confirmMessage" style="margin:0 0 4px;color:var(--second-text-color);font-size:13px;line-height:1.55"></p>
+      <div class="modal-actions">
+        <button id="confirmCancel" class="plain-button" type="button">取消</button>
+        <button id="confirmOk" class="danger-button" type="button">确认</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const state = {
       tab: "sources",
@@ -764,7 +778,7 @@ export function renderAdminHtml() {
       env: null,
       selectedId: null,
       query: "",
-      editorTab: "basic",
+      openSections: {},
       lockedReason: "",
     };
 
@@ -799,12 +813,17 @@ export function renderAdminHtml() {
         lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
         empty: '<path d="M21 15V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9"/><path d="M3 15h5l2 3h4l2-3h5"/><path d="M3 15v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/>',
         check: '<path d="m20 6-11 11-5-5"/>',
+        chevron: '<path d="m9 18 6-6-6-6"/>',
+        logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+        info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+        external: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+        qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3"/><path d="M21 14v7h-7"/>',
       };
       return '<svg ' + attrs + '>' + (paths[name] || paths.file) + '</svg>';
     }
 
     byId("refreshBtn").innerHTML = icon("refresh");
-    byId("newBtnTop").innerHTML = icon("plus");
+    byId("logoutBtn").innerHTML = icon("logout");
 
     async function api(path, options = {}) {
       const headers = { "content-type": "application/json", ...(options.headers || {}) };
@@ -823,6 +842,31 @@ export function renderAdminHtml() {
       el.classList.add("show");
       clearTimeout(toast.timer);
       toast.timer = setTimeout(() => el.classList.remove("show"), 1800);
+    }
+
+    function confirmDialog(message, { title = "确认操作", okText = "确认", danger = true } = {}) {
+      return new Promise((resolve) => {
+        const modal = byId("confirmModal");
+        byId("confirmTitle").textContent = title;
+        byId("confirmMessage").textContent = message;
+        const okBtn = byId("confirmOk");
+        okBtn.textContent = okText;
+        okBtn.className = (danger ? "danger-button" : "primary-button");
+        const close = (result) => {
+          modal.classList.remove("show");
+          modal.setAttribute("aria-hidden", "true");
+          okBtn.onclick = null;
+          byId("confirmCancel").onclick = null;
+          modal.onclick = null;
+          resolve(result);
+        };
+        okBtn.onclick = () => close(true);
+        byId("confirmCancel").onclick = () => close(false);
+        modal.onclick = (event) => { if (event.target === modal) close(false); };
+        modal.classList.add("show");
+        modal.setAttribute("aria-hidden", "false");
+        setTimeout(() => okBtn.focus(), 0);
+      });
     }
 
     async function load() {
@@ -847,7 +891,7 @@ export function renderAdminHtml() {
     }
 
     function render() {
-      byId("navTitle").textContent = tabMeta[state.tab].title;
+      byId("navTitle").textContent = "Sub-Store · " + tabMeta[state.tab].title;
       byId("newBtnTop").classList.toggle("hidden", state.tab === "backup" || !state.config);
       renderHero();
       renderTabs();
@@ -896,7 +940,7 @@ export function renderAdminHtml() {
     function setTab(tab) {
       state.tab = tab;
       state.query = "";
-      state.editorTab = "basic";
+      state.openSections = {};
       state.selectedId = firstItemIdForTab(tab);
       render();
     }
@@ -941,12 +985,23 @@ export function renderAdminHtml() {
         '<label class="search-field">' + icon("search") + '<input id="searchInput" value="' + escapeAttr(state.query) + '" placeholder="搜索 ' + escapeAttr(tabMeta[state.tab].noun) + '" /></label>' +
         '<button id="newBtn" class="primary-button" type="button">' + icon("plus") + '新建</button>' +
         '</div>' +
-        '<div class="workspace' + (selected ? ' has-editor' : '') + '">' +
+        '<div class="workspace' + (selected ? ' with-editor' : '') + '">' +
         '<section><div class="section-title"><span>' + tabMeta[state.tab].noun + ' (' + items.length + ')</span><button id="clearSearchBtn" type="button" class="' + (state.query ? '' : 'hidden') + '">清除搜索</button></div>' +
-        '<div class="list-stack">' + (items.length ? items.map((item) => itemCard(item, selected)).join("") : emptyCard()) + '</div></section>' +
-        (selected ? '<section class="editor-panel">' + formHtml(state.tab, selected) + '</section>' : '') +
+        '<div id="listStack" class="list-stack">' + (items.length ? items.map((item) => itemCard(item, selected)).join("") : emptyCard()) + '</div></section>' +
+        (selected ? '<section class="editor-panel" id="editorPanel">' + formHtml(state.tab, selected) + '</section>' : '') +
         '</div>';
       bindWorkspace(selected);
+    }
+
+    function refreshListOnly() {
+      const allItems = state.config[state.tab] || [];
+      const items = filteredItems(allItems);
+      const selected = allItems.find((item) => item.id === state.selectedId) || allItems[0] || null;
+      const stack = byId("listStack");
+      if (stack) {
+        stack.innerHTML = items.length ? items.map((item) => itemCard(item, selected)).join("") : emptyCard();
+        bindItemCards(selected);
+      }
     }
 
     function filteredItems(items) {
@@ -973,12 +1028,12 @@ export function renderAdminHtml() {
 
     function itemMeta(item) {
       if (state.tab === "sources") {
-        if (item.type === "local") return item.content ? "本地节点文本 · " + item.content.length + " 字符" : "本地节点文本";
-        return item.url || "远程 URL 未填写";
+        if (item.type === "local") return item.content ? "本地节点文本 · " + item.content.length + " 字符" : "本地节点文本（尚未填写内容）";
+        return item.url ? item.url : "远程 URL 未填写";
       }
-      if (state.tab === "collections") return "包含 " + (item.sourceIds || []).length + " 个订阅源 · 模板 " + item.templateId;
-      if (state.tab === "templates") return "目标格式 " + item.target + " · " + Object.keys(item.config || {}).length + " 个配置段";
-      if (state.tab === "profiles") return "组合 " + item.collectionId + " · " + item.target + " · 模板 " + item.templateId;
+      if (state.tab === "collections") return "包含 " + (item.sourceIds || []).length + " 个订阅源 · 模板 " + (item.templateId || "未选择");
+      if (state.tab === "templates") return "目标格式 " + (item.target || "—") + " · " + Object.keys(item.config || {}).length + " 个配置段";
+      if (state.tab === "profiles") return "组合 " + (item.collectionId || "未选择") + " · " + (item.target || "—") + " · 模板 " + (item.templateId || "未选择");
       return item.id;
     }
 
@@ -991,23 +1046,13 @@ export function renderAdminHtml() {
     }
 
     function emptyCard() {
-      return '<div class="empty-card"><div><div class="empty-illustration">' + icon("empty") + '</div><h2>暂无' + escapeHtml(tabMeta[state.tab].noun) + '</h2><p>点击“新建”添加第一条配置。</p></div></div>';
+      return '<div class="empty-card"><div><div class="empty-illustration">' + icon("empty") + '</div><h2>暂无' + escapeHtml(tabMeta[state.tab].noun) + '</h2><p>在当前云端还没有 ' + escapeHtml(tabMeta[state.tab].noun) + '，点击下方按钮添加第一条。</p><button class="primary-button" type="button" id="emptyNewBtn" style="margin-top:14px">' + icon("plus") + '新建' + escapeHtml(tabMeta[state.tab].noun) + '</button></div></div>';
     }
 
     function formHtml(tab, item) {
       const title = item.name || item.id;
       return '<div class="panel"><div class="panel-header"><div class="panel-title">' + escapeHtml(title) + '</div><span class="tag primary">' + escapeHtml(item.id) + '</span></div>' +
-        '<div class="editor-tabs">' + editorTabs(tab).map((part) =>
-          '<button class="editor-tab' + (state.editorTab === part.id ? ' active' : '') + '" type="button" data-editor-tab="' + part.id + '">' + part.label + '</button>'
-        ).join("") + '</div>' +
         formFor(tab, item) + '</div>';
-    }
-
-    function editorTabs(tab) {
-      if (tab === "sources") return [{ id: "basic", label: "基础" }, { id: "content", label: "内容" }, { id: "process", label: "处理" }];
-      if (tab === "collections") return [{ id: "basic", label: "基础" }, { id: "sources", label: "订阅源" }, { id: "process", label: "处理" }];
-      if (tab === "templates") return [{ id: "basic", label: "基础" }, { id: "config", label: "规则" }];
-      return [{ id: "basic", label: "基础" }, { id: "link", label: "链接" }];
     }
 
     function formFor(tab, item) {
@@ -1018,25 +1063,25 @@ export function renderAdminHtml() {
     }
 
     function sourceForm(item) {
-      return '<form class="form" data-kind="sources">' +
-        section("basic", input("ID", "id", item.id, true) + input("名称", "name", item.name) + select("类型", "type", item.type, [["remote", "远程 URL"], ["local", "本地文本"]]) + switchInput("启用", "enabled", item.enabled !== false)) +
-        section("content", input("远程订阅 URL", "url", item.url || "") + area("本地节点文本", "content", item.content || "", "tall")) +
-        section("process", area("过滤器 JSON", "filters", JSON.stringify(item.filters || [], null, 2))) +
+      return '<form class="form editor-form" data-kind="sources">' +
+        section("basic", "基础", input("ID", "id", item.id, true) + input("名称", "name", item.name) + select("类型", "type", item.type, [["remote", "远程 URL"], ["local", "本地文本"]]) + switchInput("启用", "enabled", item.enabled !== false)) +
+        section("content", "内容", input("远程订阅 URL", "url", item.url || "") + area("本地节点文本", "content", item.content || "", "tall")) +
+        section("process", "处理", area("过滤器 JSON", "filters", JSON.stringify(item.filters || [], null, 2))) +
         actions() + '</form>';
     }
 
     function collectionForm(item) {
-      return '<form class="form" data-kind="collections">' +
-        section("basic", input("ID", "id", item.id, true) + input("名称", "name", item.name) + select("规则模板", "templateId", item.templateId, optionList(state.config.templates)) + switchInput("跳过失败的远程订阅", "ignoreFailed", item.ignoreFailed !== false) + switchInput("启用", "enabled", item.enabled !== false)) +
-        section("sources", sourceChoices(item.sourceIds || []) + '<input type="hidden" name="sourceIds" value="' + escapeAttr(JSON.stringify(item.sourceIds || [])) + '" />') +
-        section("process", area("组合过滤器 JSON", "filters", JSON.stringify(item.filters || [], null, 2))) +
+      return '<form class="form editor-form" data-kind="collections">' +
+        section("basic", "基础", input("ID", "id", item.id, true) + input("名称", "name", item.name) + select("规则模板", "templateId", item.templateId, optionList(state.config.templates)) + switchInput("跳过失败的远程订阅", "ignoreFailed", item.ignoreFailed !== false) + switchInput("启用", "enabled", item.enabled !== false)) +
+        section("sources", "订阅源", sourceChoices(item.sourceIds || []) + '<input type="hidden" name="sourceIds" value="' + escapeAttr(JSON.stringify(item.sourceIds || [])) + '" />') +
+        section("process", "处理", area("组合过滤器 JSON", "filters", JSON.stringify(item.filters || [], null, 2))) +
         actions() + '</form>';
     }
 
     function templateForm(item) {
-      return '<form class="form" data-kind="templates">' +
-        section("basic", input("ID", "id", item.id, true) + input("名称", "name", item.name) + select("目标格式", "target", item.target, targetOptions)) +
-        section("config", area("模板 JSON", "config", JSON.stringify(item.config || {}, null, 2), "tall")) +
+      return '<form class="form editor-form" data-kind="templates">' +
+        section("basic", "基础", input("ID", "id", item.id, true) + input("名称", "name", item.name) + select("目标格式", "target", item.target, targetOptions)) +
+        section("config", "规则", area("模板 JSON", "config", JSON.stringify(item.config || {}, null, 2), "tall")) +
         actions(item.id === "mihomo-basic") + '</form>';
     }
 
@@ -1044,14 +1089,17 @@ export function renderAdminHtml() {
       const downloadOrigin = localStorage.getItem("substore_download_origin") || defaultDownloadOrigin();
       const downloadToken = localStorage.getItem("substore_download_token") || "";
       const link = makeDownloadLink(item, downloadOrigin, downloadToken);
-      return '<form class="form" data-kind="profiles">' +
-        section("basic", input("ID", "id", item.id, true) + input("名称", "name", item.name) + select("组合订阅", "collectionId", item.collectionId, optionList(state.config.collections)) + select("目标格式", "target", item.target, targetOptions) + select("规则模板", "templateId", item.templateId, optionList(state.config.templates)) + switchInput("启用", "enabled", item.enabled !== false)) +
-        section("link", input("下载域名", "downloadOrigin", downloadOrigin) + input("下载 token", "downloadToken", downloadToken) + '<label class="field">下载链接<div class="linkbox" id="downloadLink">' + escapeHtml(link) + '</div></label><button class="plain-button" type="button" id="copyLinkBtn">' + icon("copy") + '复制链接</button>') +
+      return '<form class="form editor-form" data-kind="profiles">' +
+        section("basic", "基础", input("ID", "id", item.id, true) + input("名称", "name", item.name) + select("组合订阅", "collectionId", item.collectionId, optionList(state.config.collections)) + select("目标格式", "target", item.target, targetOptions) + select("规则模板", "templateId", item.templateId, optionList(state.config.templates)) + switchInput("启用", "enabled", item.enabled !== false)) +
+        section("link", "链接", input("下载域名", "downloadOrigin", downloadOrigin) + input("下载 token", "downloadToken", downloadToken) + '<label class="field">下载链接<div class="linkbox" id="downloadLink">' + escapeHtml(link) + '</div></label><button class="plain-button" type="button" id="copyLinkBtn">' + icon("copy") + '复制链接</button>') +
         actions() + '</form>';
     }
 
-    function section(id, html) {
-      return '<div class="editor-section" data-section="' + id + '"' + (state.editorTab === id ? '' : ' hidden') + '>' + html + '</div>';
+    function section(id, label, html) {
+      const open = state.openSections[id] !== false;
+      return '<div class="editor-section' + (open ? ' open' : '') + '" data-section="' + id + '">' +
+        '<button class="editor-section-header" type="button" data-section-toggle="' + id + '"><span>' + escapeHtml(label) + '</span>' + icon("chevron") + '</button>' +
+        '<div class="editor-section-body">' + html + '</div></div>';
     }
 
     function input(labelText, name, value, readonly = false) {
@@ -1095,23 +1143,43 @@ export function renderAdminHtml() {
     function bindWorkspace(selected) {
       byId("searchInput").oninput = (event) => {
         state.query = event.target.value;
-        renderWorkspace();
+        refreshListOnly();
       };
       byId("newBtn").onclick = openCreateModal;
+      const emptyNew = byId("emptyNewBtn");
+      if (emptyNew) emptyNew.onclick = openCreateModal;
       byId("clearSearchBtn").onclick = () => { state.query = ""; renderWorkspace(); };
+      document.querySelectorAll("[data-section-toggle]").forEach((button) => {
+        button.onclick = () => {
+          const id = button.dataset.sectionToggle;
+          const isOpen = state.openSections[id] !== false;
+          state.openSections[id] = !isOpen;
+          const sectionEl = button.closest(".editor-section");
+          if (sectionEl) sectionEl.classList.toggle("open", !isOpen);
+        };
+      });
+      bindItemCards(selected);
+      bindForm(selected);
+    }
+
+    function bindItemCards(selected) {
+      const emptyNew = byId("emptyNewBtn");
+      if (emptyNew) emptyNew.onclick = openCreateModal;
       document.querySelectorAll(".item-card").forEach((card) => {
         card.onclick = () => {
           state.selectedId = card.dataset.id;
-          state.editorTab = "basic";
+          state.openSections = {};
           renderWorkspace();
+          scrollEditorIntoView();
         };
       });
       document.querySelectorAll("[data-edit]").forEach((button) => {
         button.onclick = (event) => {
           event.stopPropagation();
           state.selectedId = button.dataset.edit;
-          state.editorTab = "basic";
+          state.openSections = {};
           renderWorkspace();
+          scrollEditorIntoView();
         };
       });
       document.querySelectorAll("[data-delete]").forEach((button) => {
@@ -1127,13 +1195,13 @@ export function renderAdminHtml() {
           if (profile) await copyText(makeDownloadLink(profile));
         };
       });
-      document.querySelectorAll("[data-editor-tab]").forEach((button) => {
-        button.onclick = () => {
-          state.editorTab = button.dataset.editorTab;
-          renderWorkspace();
-        };
-      });
-      bindForm(selected);
+    }
+
+    function scrollEditorIntoView() {
+      const panel = byId("editorPanel");
+      if (panel && panel.getBoundingClientRect().bottom > window.innerHeight) {
+        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
 
     function bindForm(selected) {
@@ -1141,8 +1209,18 @@ export function renderAdminHtml() {
       if (!form || !selected) return;
       const copyBtn = byId("copyLinkBtn");
       if (copyBtn) copyBtn.onclick = async () => copyText(byId("downloadLink").textContent);
+      const originField = form.querySelector('[name="downloadOrigin"]');
+      const tokenField = form.querySelector('[name="downloadToken"]');
+      const linkBox = byId("downloadLink");
+      if (originField && tokenField && linkBox) {
+        const recompute = () => { linkBox.textContent = makeDownloadLink(selected, originField.value, tokenField.value); };
+        originField.oninput = recompute;
+        tokenField.oninput = recompute;
+      }
       form.onsubmit = async (event) => {
         event.preventDefault();
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) { submitBtn.disabled = true; const original = submitBtn.innerHTML; submitBtn.innerHTML = "保存中…"; submitBtn.dataset.originalHtml = original; }
         try {
           const data = formData(form);
           const kind = form.dataset.kind;
@@ -1157,6 +1235,8 @@ export function renderAdminHtml() {
           render();
         } catch (error) {
           toast(error.message || "保存失败");
+        } finally {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = submitBtn.dataset.originalHtml || submitBtn.innerHTML; }
         }
       };
       const deleteButton = form.querySelector("[data-delete-current]");
@@ -1181,7 +1261,7 @@ export function renderAdminHtml() {
 
     async function deleteCurrent(id) {
       if (!id) return;
-      if (!confirm("确认删除 " + id + " ?")) return;
+      if (!await confirmDialog("删除后无法恢复，确认删除 " + id + " ？", { title: "删除" + tabMeta[state.tab].noun, okText: "删除" })) return;
       try {
         await api("/api/" + state.tab + "/" + encodeURIComponent(id), { method: "DELETE" });
         state.selectedId = null;
@@ -1195,13 +1275,17 @@ export function renderAdminHtml() {
     function renderBackup() {
       byId("content").innerHTML =
         '<section class="panel backup-panel">' +
-        '<div class="panel-header"><div class="panel-title">配置 JSON</div><div style="display:flex;gap:8px"><button id="exportBtn" class="plain-button" type="button">刷新导出</button><button id="importBtn" class="primary-button" type="button">导入覆盖</button></div></div>' +
-        '<div class="form"><label class="field">完整配置<textarea id="backupText" class="tall">' + escapeHtml(JSON.stringify(state.config, null, 2)) + '</textarea></label></div>' +
+        '<div class="panel-header"><div class="panel-title">配置 JSON</div><div style="display:flex;gap:8px"><button id="exportBtn" class="plain-button" type="button">' + icon("refresh") + '重新加载</button><button id="importBtn" class="primary-button" type="button">' + icon("archive") + '导入覆盖</button></div></div>' +
+        '<div class="form"><label class="field">完整配置<textarea id="backupText" class="tall">' + escapeHtml(JSON.stringify(state.config, null, 2)) + '</textarea></label>' +
+        '<p style="margin:0;display:flex;gap:7px;align-items:flex-start;color:var(--comment-text-color);font-size:12px;line-height:1.55"><span style="flex:0 0 auto;color:var(--primary-color)">' + icon("info") + '</span><span>“导入覆盖”会用文本框里的 JSON 整体替换当前所有订阅源、组合、模板和输出链接，请先确认无误。</span></p></div>' +
         '</section>';
-      byId("exportBtn").onclick = () => { byId("backupText").value = JSON.stringify(state.config, null, 2); };
+      byId("exportBtn").onclick = () => { byId("backupText").value = JSON.stringify(state.config, null, 2); toast("已重新加载当前配置"); };
       byId("importBtn").onclick = async () => {
+        let next;
+        try { next = parseJson(byId("backupText").value, "配置 JSON 格式不正确"); }
+        catch (error) { toast(error.message || "导入失败"); return; }
+        if (!await confirmDialog("导入覆盖会整体替换全部配置，且无法撤销。确认继续？", { title: "导入覆盖", okText: "覆盖导入", danger: true })) return;
         try {
-          const next = parseJson(byId("backupText").value, "配置 JSON 格式不正确");
           state.config = await api("/api/config", { method: "PUT", body: JSON.stringify(next) });
           toast("已导入");
           render();
@@ -1233,7 +1317,7 @@ export function renderAdminHtml() {
         await api("/api/" + state.tab, { method: "POST", body: JSON.stringify(payload) });
         closeCreateModal();
         state.selectedId = id;
-        state.editorTab = "basic";
+        state.openSections = {};
         await load();
         toast("已创建");
       } catch (error) {
@@ -1253,6 +1337,14 @@ export function renderAdminHtml() {
 
     byId("refreshBtn").onclick = load;
     byId("newBtnTop").onclick = openCreateModal;
+    byId("logoutBtn").onclick = async () => {
+      if (!await confirmDialog("退出登录会清除本地的管理 token，需要重新输入才能继续管理。确认退出？")) return;
+      adminToken = "";
+      localStorage.removeItem("substore_admin_token");
+      state.config = null;
+      state.selectedId = null;
+      render();
+    };
 
     function makeDownloadLink(profile, origin, token) {
       const base = (origin || localStorage.getItem("substore_download_origin") || defaultDownloadOrigin()).replace(/\\/$/, "");
