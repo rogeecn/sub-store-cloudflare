@@ -156,6 +156,7 @@ function parseProxyUris(raw: string) {
 
 function parseProxyUri(line: string, index: number): ProxyNode | undefined {
   if (line.startsWith("vless://")) return parseVless(line, index);
+  if (line.startsWith("anytls://")) return parseAnytls(line, index);
   if (line.startsWith("hysteria2://") || line.startsWith("hy2://")) return parseHysteria2(line, index);
   if (line.startsWith("trojan://")) return parseTrojan(line, index);
   if (line.startsWith("vmess://")) return parseVmess(line, index);
@@ -184,6 +185,21 @@ function parseVless(line: string, index: number): ProxyNode {
     encryption: params.get("encryption") || "none",
     "client-fingerprint": params.get("fp") || "chrome",
     "reality-opts": publicKey ? stripUndefined({ "public-key": publicKey, "short-id": shortId, "spider-x": params.get("spx") || "/" }) : undefined,
+  });
+}
+
+function parseAnytls(line: string, index: number): ProxyNode {
+  const url = new URL(line);
+  const params = url.searchParams;
+  return stripUndefined({
+    name: decodeURIComponent(url.hash.slice(1) || `anytls-${index + 1}`),
+    type: "anytls",
+    server: url.hostname,
+    port: Number(url.port || 443),
+    password: decodeURIComponent(url.username),
+    sni: params.get("sni") || params.get("peer") || undefined,
+    "skip-cert-verify": boolParam(params.get("insecure") || params.get("allowInsecure")),
+    "client-fingerprint": params.get("fp") || "chrome",
   });
 }
 
@@ -479,6 +495,22 @@ function toSingBoxOutbound(proxy: ProxyNode): SingBoxOutbound | undefined {
     });
   }
 
+  if (proxy.type === "anytls") {
+    return stripUndefined({
+      type: "anytls",
+      tag: proxy.name,
+      server: proxy.server,
+      server_port: proxy.port,
+      password: proxy.password,
+      tls: {
+        enabled: true,
+        server_name: proxy.sni || proxy.servername,
+        insecure: Boolean(proxy["skip-cert-verify"]),
+        utls: { enabled: true, fingerprint: proxy["client-fingerprint"] || "chrome" },
+      },
+    });
+  }
+
   if (proxy.type === "trojan") {
     return stripUndefined({
       type: "trojan",
@@ -556,6 +588,14 @@ function toProxyUri(proxy: ProxyNode) {
     if (proxy.obfs) params.set("obfs", String(proxy.obfs));
     if (proxy["obfs-password"]) params.set("obfs-password", String(proxy["obfs-password"]));
     return `hysteria2://${encodeURIComponent(String(proxy.password))}@${proxy.server}:${proxy.port}?${params.toString()}#${encodeURIComponent(proxy.name)}`;
+  }
+
+  if (proxy.type === "anytls") {
+    const params = new URLSearchParams();
+    if (proxy.sni || proxy.servername) params.set("sni", String(proxy.sni || proxy.servername));
+    if (proxy["skip-cert-verify"]) params.set("insecure", "1");
+    if (proxy["client-fingerprint"]) params.set("fp", String(proxy["client-fingerprint"]));
+    return `anytls://${encodeURIComponent(String(proxy.password))}@${proxy.server}:${proxy.port}?${params.toString()}#${encodeURIComponent(proxy.name)}`;
   }
 
   if (proxy.type === "trojan") {

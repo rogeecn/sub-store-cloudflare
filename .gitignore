@@ -10,6 +10,10 @@
 .open-source-denylist.local
 wrangler.deploy.local.jsonc
 cloudflare/wrangler.deploy.local.jsonc
+*.seed.local.json
+*.seed.local.sql
+*.private.json
+*.private.sql
 
 # Dependency and build output
 **/node_modules/
