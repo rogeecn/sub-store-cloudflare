@@ -33,6 +33,7 @@ apiRoutes.get("/env", async (c) =>
     app: c.env.SUB_STORE_APP_NAME || "Sub-Store Cloudflare",
     runtime: "Cloudflare Workers",
     storage: "D1",
+    publicDownloadHosts: c.env.SUB_STORE_PUBLIC_DOWNLOAD_HOSTS || "",
   }),
 );
 
