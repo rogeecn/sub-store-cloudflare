@@ -239,7 +239,12 @@ const toApiFilters = (process: unknown) => {
   });
 };
 
-const newUiId = () => crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+const newUiId = () => {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  const values = new Uint32Array(4);
+  crypto.getRandomValues(values);
+  return Array.from(values, value => value.toString(16).padStart(8, '0')).join('-');
+};
 
 const fromApiFilters = (filters: unknown): UiProcess[] => {
   if (!Array.isArray(filters)) return [];

@@ -61,7 +61,7 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "type": { "enum": ["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "flag", "quick"] },
+        "type": { "enum": ["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "resolve", "flag", "quick"] },
         "field": { "type": "string" },
         "fields": {
           "type": "array",
@@ -84,6 +84,17 @@
         "template": { "type": "string" },
         "mode": { "enum": ["add", "remove"] },
         "tw": { "enum": ["cn", "ws", "tw"] },
+        "provider": { "enum": ["Google", "IP-API", "Cloudflare", "Ali", "Tencent", "Custom"] },
+        "recordType": { "enum": ["A", "AAAA"] },
+        "filter": { "enum": ["disabled", "removeFailed", "IPOnly", "IPv4Only", "IPv6Only"] },
+        "url": { "type": "string" },
+        "edns": { "type": "string" },
+        "concurrency": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1, "maximum": 12 },
+            { "type": "string" }
+          ]
+        },
         "useless": { "enum": ["DEFAULT", "ENABLED", "DISABLED"] },
         "udp": { "enum": ["DEFAULT", "ENABLED", "DISABLED"] },
         "scert": { "enum": ["DEFAULT", "ENABLED", "DISABLED"] },

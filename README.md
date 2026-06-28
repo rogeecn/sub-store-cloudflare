@@ -149,7 +149,8 @@ https://substore.example.com/?token=<admin-token>
 订阅链接：
 
 ```text
-https://substore.example.com/download/source/<source-id>/mihomo?token=<download-token>
+https://substore.example.com/download/source/<source-id>?token=<download-token>
+https://substore.example.com/download/collection/<collection-id>?token=<download-token>
 https://substore.example.com/download/collection/<collection-id>/mihomo?token=<download-token>
 https://substore.example.com/download/collection/<collection-id>/surge?token=<download-token>
 https://substore.example.com/download/collection/<collection-id>/loon?token=<download-token>
@@ -157,10 +158,12 @@ https://substore.example.com/download/collection/<collection-id>/qx?token=<downl
 https://substore.example.com/download/collection/<collection-id>/sing-box?token=<download-token>
 ```
 
+不带输出格式的链接是通用订阅，Worker 会按客户端 User-Agent 自动选择格式；也可以显式指定 `mihomo`、`stash`、`surge`、`loon`、`qx`、`sing-box`、`uri`、`json` 等输出格式。
+
 临时转换：
 
 ```text
-https://substore.example.com/download/source/<source-id>/mihomo?token=<download-token>&url=https%3A%2F%2Fexample.com%2Fsub
+https://substore.example.com/download/source/<source-id>?token=<download-token>&url=https%3A%2F%2Fexample.com%2Fsub
 https://substore.example.com/download/source/<source-id>/sing-box?token=<download-token>&content=<url-encoded-node-text>
 ```
 

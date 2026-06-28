@@ -121,7 +121,8 @@ https://substore.example.com/?token=<admin-token>
 下载链接：
 
 ```text
-https://substore.example.com/download/source/<source-id>/mihomo?token=<download-token>
+https://substore.example.com/download/source/<source-id>?token=<download-token>
+https://substore.example.com/download/collection/<collection-id>?token=<download-token>
 https://substore.example.com/download/collection/<collection-id>/mihomo?token=<download-token>
 https://substore.example.com/download/collection/<collection-id>/surge?token=<download-token>
 https://substore.example.com/download/collection/<collection-id>/loon?token=<download-token>
@@ -130,12 +131,12 @@ https://substore.example.com/download/collection/<collection-id>/sing-box?token=
 https://substore.example.com/download/collection/<collection-id>/uri?token=<download-token>
 ```
 
-管理界面的复制按钮会读取 Worker Secret 里的下载 token，并生成可直接复制到客户端的链接。
+不带输出格式的链接是通用订阅，Worker 会按客户端 User-Agent 自动选择格式。管理界面的复制按钮会读取 Worker Secret 里的下载 token，并生成可直接复制到客户端的链接。
 
 临时转换链接：
 
 ```text
-https://substore.example.com/download/source/<source-id>/mihomo?token=<download-token>&url=https%3A%2F%2Fexample.com%2Fsub
+https://substore.example.com/download/source/<source-id>?token=<download-token>&url=https%3A%2F%2Fexample.com%2Fsub
 https://substore.example.com/download/source/<source-id>/uri?token=<download-token>&content=<url-encoded-node-text>
 ```
 

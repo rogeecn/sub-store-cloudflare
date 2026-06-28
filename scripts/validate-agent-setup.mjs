@@ -153,7 +153,7 @@ function validateFilters(filters, label) {
       continue;
     }
 
-    if (!["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "flag", "quick"].includes(filter.type)) {
+    if (!["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "resolve", "flag", "quick"].includes(filter.type)) {
       errors.push(`${label}[${index}].type is unsupported: ${filter.type}`);
       continue;
     }
@@ -181,6 +181,26 @@ function validateFilters(filters, label) {
     }
     if (filter.type === "flag" && filter.mode && !["add", "remove"].includes(filter.mode)) {
       errors.push(`${label}[${index}].mode must be add or remove`);
+    }
+    if (filter.type === "resolve") {
+      if (filter.provider && !["Google", "IP-API", "Cloudflare", "Ali", "Tencent", "Custom"].includes(filter.provider)) {
+        errors.push(`${label}[${index}].provider contains unsupported resolver: ${filter.provider}`);
+      }
+      if (filter.recordType && !["A", "AAAA"].includes(filter.recordType)) {
+        errors.push(`${label}[${index}].recordType must be A or AAAA`);
+      }
+      if (filter.filter && !["disabled", "removeFailed", "IPOnly", "IPv4Only", "IPv6Only"].includes(filter.filter)) {
+        errors.push(`${label}[${index}].filter contains unsupported resolve filter: ${filter.filter}`);
+      }
+      if (filter.provider === "Custom" && !/^https:\/\//i.test(stringValue(filter.url))) {
+        errors.push(`${label}[${index}].url must be an https DoH endpoint when provider is Custom`);
+      }
+      if (filter.concurrency !== undefined) {
+        const concurrency = Number(filter.concurrency);
+        if (!Number.isFinite(concurrency) || concurrency < 1 || concurrency > 12) {
+          errors.push(`${label}[${index}].concurrency must be between 1 and 12`);
+        }
+      }
     }
   }
 }

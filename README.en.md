@@ -89,7 +89,8 @@ pnpm run seed:remote
 Download URLs:
 
 ```text
-https://substore.example.com/download/source/<source-id>/mihomo?token=<download-token>
+https://substore.example.com/download/source/<source-id>?token=<download-token>
+https://substore.example.com/download/collection/<collection-id>?token=<download-token>
 https://substore.example.com/download/collection/<collection-id>/mihomo?token=<download-token>
 https://substore.example.com/download/collection/<collection-id>/surge?token=<download-token>
 https://substore.example.com/download/collection/<collection-id>/loon?token=<download-token>
@@ -97,10 +98,12 @@ https://substore.example.com/download/collection/<collection-id>/qx?token=<downl
 https://substore.example.com/download/collection/<collection-id>/sing-box?token=<download-token>
 ```
 
+Links without an explicit output target are general subscription links. The Worker chooses an output target from the client User-Agent, or you can pin `mihomo`, `stash`, `surge`, `loon`, `qx`, `sing-box`, `uri`, `json`, and other supported targets explicitly.
+
 One-off conversion:
 
 ```text
-https://substore.example.com/download/source/<source-id>/mihomo?token=<download-token>&url=https%3A%2F%2Fexample.com%2Fsub
+https://substore.example.com/download/source/<source-id>?token=<download-token>&url=https%3A%2F%2Fexample.com%2Fsub
 https://substore.example.com/download/source/<source-id>/sing-box?token=<download-token>&content=<url-encoded-node-text>
 ```
 

@@ -136,5 +136,5 @@ async function rejectInvalidDownloadToken(c: DownloadContext) {
 function getDownloadTarget(c: DownloadContext, defaultTarget?: string) {
   const explicit = c.req.param("target") || c.req.query("target");
   if (explicit) return normalizeTargetAlias(explicit);
-  return normalizeTarget(defaultTarget || "mihomo", c.req.header("user-agent") || "");
+  return normalizeTarget(defaultTarget, c.req.header("user-agent") || "");
 }

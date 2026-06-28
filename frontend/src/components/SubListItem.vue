@@ -867,7 +867,7 @@ const onClickCopyConfig = async () => {
       data = JSON.parse(JSON.stringify(toRaw(props.collection)));
       break;
   }
-  data.name += `-copy${~~(Math.random() * 10000)}`;
+  data.name += `-copy-${crypto.randomUUID().slice(0, 8)}`;
 
   Toast.loading(t("subPage.copyConfigNotify.loading"), { id: "copyConfig" });
   await cloudflareApi.createItem(`${props.type}s`, data);

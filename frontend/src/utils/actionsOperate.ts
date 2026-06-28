@@ -12,7 +12,7 @@ export const addItem = (
   selectedOptions,
   t
 ) => {
-  const id = Math.random() * 100000000 + '';
+  const id = crypto.randomUUID();
   const type = selectedOptions[0].value;
   const args = selectedOptions[0].args;
   const enabled = true;

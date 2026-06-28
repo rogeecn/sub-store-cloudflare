@@ -15,8 +15,8 @@ Cloudflare Worker
   |-- /api/collections               组合订阅
   |-- /api/templates                 分流模板
   |-- /api/preview/*                 节点预览
-  |-- /download/source/:id/:target   单订阅源输出
-  |-- /download/collection/:id/:target 组合订阅输出
+  |-- /download/source/:id[/:target]   单订阅源输出
+  |-- /download/collection/:id[/:target] 组合订阅输出
   |
   |-- D1                             sources / collections / templates / app_settings
   |-- Worker Secrets                 管理端 token / 下载 token
@@ -36,7 +36,7 @@ Cloudflare Worker
 ## 输出流程
 
 ```text
-客户端请求 /download/collection/:id/:target
+客户端请求 /download/collection/:id[/:target]
   |
   |-- 校验下载 token
   |-- 读取 collection
@@ -51,7 +51,7 @@ Cloudflare Worker
   |-- 输出 mihomo / stash / surge / loon / qx / shadowrocket / sing-box / v2ray / uri / json
 ```
 
-`/download/source/:id/:target` 走同一套解析和过滤逻辑，只是不读取 collection。
+`target` 可省略；省略时 Worker 会根据客户端 User-Agent 自动选择输出格式，无法识别时默认输出 Mihomo。`/download/source/:id[/:target]` 走同一套解析和过滤逻辑，只是不读取 collection。
 
 下载请求可以附加 `url`、`content` 和 `ua`：
 

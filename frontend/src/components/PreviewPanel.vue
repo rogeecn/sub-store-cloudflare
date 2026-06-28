@@ -146,7 +146,7 @@
   const platformList = [
     {
       name: general,
-      path: 'mihomo',
+      path: null,
       icon: logoIcon,
     },
     ...DOWNLOAD_TARGET_OPTIONS.map((target) => ({

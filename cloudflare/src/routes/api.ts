@@ -377,26 +377,28 @@ function toSubscriptionCollection(input: JsonMap): SubscriptionCollection {
 }
 
 function buildDownloadLink(c: ApiContext, kind: "source" | "collection", id: string) {
-  const target = normalizeDownloadTarget(c.req.query("target"));
-  if (!target) return undefined;
-  const path = kind === "collection" ? `/download/collection/${encodeURIComponent(id)}/${target}` : `/download/source/${encodeURIComponent(id)}/${target}`;
+  const rawTarget = c.req.query("target");
+  const target = normalizeDownloadTarget(rawTarget);
+  if (rawTarget && !target) return undefined;
+  const path = ["/download", kind, encodeURIComponent(id), target].filter(Boolean).join("/");
   const url = new URL(path, getPublicBaseUrl(c));
   if (c.env.SUB_STORE_PUBLIC_DOWNLOAD_TOKEN) url.searchParams.set("token", c.env.SUB_STORE_PUBLIC_DOWNLOAD_TOKEN);
   for (const key of ["url", "content", "ua", "userAgent"]) {
     const value = c.req.query(key);
     if (value) url.searchParams.set(key, value);
   }
-  return { url: url.toString(), target, tokenIncluded: Boolean(c.env.SUB_STORE_PUBLIC_DOWNLOAD_TOKEN) };
+  return { url: url.toString(), target: target || "auto", tokenIncluded: Boolean(c.env.SUB_STORE_PUBLIC_DOWNLOAD_TOKEN) };
 }
 
 function getPublicBaseUrl(c: ApiContext) {
   const publicHost = (c.env.SUB_STORE_PUBLIC_DOWNLOAD_HOSTS || "").split(",").map((host) => host.trim()).find(Boolean);
   const host = publicHost || c.req.header("x-forwarded-host") || c.req.header("host") || new URL(c.req.url).host;
-  return `https://${host}`;
+  const protocol = publicHost ? "https:" : new URL(c.req.url).protocol;
+  return `${protocol}//${host}`;
 }
 
 function normalizeDownloadTarget(input: unknown): SubscriptionTarget | undefined {
-  if (input === undefined || input === null || String(input) === "") return "mihomo";
+  if (input === undefined || input === null || String(input) === "") return undefined;
   return normalizeTargetAlias(input);
 }
 

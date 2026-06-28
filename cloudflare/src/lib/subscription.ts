@@ -1064,10 +1064,19 @@ function regexOrder(expressions: RegExp[], name: string) {
 function shuffleProxies(proxies: ProxyNode[]) {
   const next = [...proxies];
   for (let index = next.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
+    const randomIndex = secureRandomInt(index + 1);
     [next[index], next[randomIndex]] = [next[randomIndex], next[index]];
   }
   return next;
+}
+
+function secureRandomInt(maxExclusive: number) {
+  const limit = Math.floor(0x100000000 / maxExclusive) * maxExclusive;
+  const buffer = new Uint32Array(1);
+  do {
+    crypto.getRandomValues(buffer);
+  } while (buffer[0] >= limit);
+  return buffer[0] % maxExclusive;
 }
 
 function flagProxies(proxies: ProxyNode[], filter: FilterRule) {
