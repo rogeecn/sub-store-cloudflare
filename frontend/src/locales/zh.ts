@@ -147,10 +147,6 @@ export default {
     },
     panel: {
       general: "通用订阅",
-      options: {
-        includeUnsupportedProxy: "含不支持的协议",
-        prettyYaml: "更易读的 YAML"
-      },
       tips: {
         ok: "查看文档",
         cancel: "取消",

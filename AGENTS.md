@@ -11,13 +11,20 @@ Deploy Sub-Store Cloudflare into the user's Cloudflare account, import their sub
 - Keep the app Cloudflare-native and small: Workers Static Assets + Worker API + D1 + Worker Secrets.
 - Use D1 for structured configuration. Do not switch to R2/KV/Durable Objects/Queues/Cron/Pages unless the user explicitly changes the architecture and the code is updated for it.
 - The public data model is `sources`, `collections`, `templates`, `filters`, and `sourceIds`.
-- The only filter DSL accepted by Worker config is:
+- The filter DSL accepted by Worker config is:
   - `{ "type": "include", "field": "name", "pattern": "..." }`
   - `{ "type": "exclude", "field": "name", "pattern": "..." }`
   - `{ "type": "rename", "field": "name", "pattern": "...", "replacement": "..." }`
+  - `{ "type": "delete-field", "field": "name", "patterns": ["..."] }`
   - `{ "type": "dedupe", "fields": ["server", "port"] }`
   - `{ "type": "sort", "direction": "asc" }`
+  - `{ "type": "regex-sort", "expressions": ["香港|HK", "日本|JP"] }`
+  - `{ "type": "flag", "mode": "add" }`
+  - `{ "type": "quick", "useless": "ENABLED", "udp": "DEFAULT", "scert": "DEFAULT", "tfo": "DEFAULT" }`
+  - `{ "type": "resolve", "provider": "Cloudflare", "recordType": "A", "filter": "disabled" }`
 - Download URLs are:
+  - `/download/source/<source-id>?token=<download-token>`
+  - `/download/collection/<collection-id>?token=<download-token>`
   - `/download/source/<source-id>/<target>?token=<download-token>`
   - `/download/collection/<collection-id>/<target>?token=<download-token>`
 

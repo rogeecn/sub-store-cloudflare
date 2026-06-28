@@ -92,7 +92,6 @@ const isDarkModeEnabled = ref(true);
 
 const Length = ref("");
 const props = defineProps(["isReadOnly", "id"]);
-console.log("cm-id: ", props.id);
 const cmStore = useCodeStore();
 const isJS = ref(false);
 const viewRef = ref(null);
@@ -126,7 +125,6 @@ const CreateView = () => {
           if (!update.docChanged) return;
           const docContent = update.state.doc.toString();
           docUpdate = true;
-          console.log("更新文档 - CodeValue");
           cmStore.setEditCode([props.id], docContent);
           Length.value = formatLength(docContent.length);
           docUpdate = false;
@@ -146,7 +144,6 @@ const CreateView = () => {
     () => cmStore.EditCode[props.id],
     (newValue) => {
       if (!docUpdate && newValue !== view.state.doc.toString()) {
-        console.log("Code更新到文档");
         view.dispatch({
           changes: {
             from: 0,
@@ -160,7 +157,6 @@ const CreateView = () => {
   );
 
   watch(isDarkModeEnabled, (isDark) => {
-    console.log(isDarkModeEnabled);
     if (isDark) {
       view.dispatch({
         effects: editorTheme.reconfigure(darkCode),
@@ -189,18 +185,15 @@ const getjsjson = (res) => {
       /(?:function|var|let|const|if|else|return|try|catch|finally|typeof|delete|async|await|Error:)\s/;
     if (jsRegex.test(res.slice(0, 4000))) {
       setHJ();
-      console.log("---setHJ");
       return true;
     } else {
       if (/\{/.test(res.slice(0, 4000))) {
         try {
           JSON.parse(res);
           setHJ();
-          console.log("111");
           return true;
         } catch (error) {
           noHJ();
-          console.log("1112");
           return true;
         }
       } else {

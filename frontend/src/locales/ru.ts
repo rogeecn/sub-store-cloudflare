@@ -147,10 +147,6 @@ export default {
     },
     panel: {
       general: "Общие",
-      options: {
-        includeUnsupportedProxy: "Неподдерживаемые протоколы",
-        prettyYaml: "Читаемый YAML"
-      },
       tips: {
         ok: "Документация",
         cancel: "Отмена",

@@ -147,10 +147,6 @@ export default {
     },
     panel: {
       general: "General",
-      options: {
-        includeUnsupportedProxy: "Unsupported protocols",
-        prettyYaml: "Readable YAML"
-      },
       tips: {
         ok: "View Document",
         cancel: "Cancel",

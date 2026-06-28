@@ -76,7 +76,6 @@ watchEffect(async () => {
         responseType: 'text',
         transformResponse: [(data) => data],
       })
-      console.log(typeof response.data)
       processedData.value = response.data
       cmStore.setEditCode('filePreview', processedData.value || '')
     } catch (error) {

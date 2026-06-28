@@ -1,5 +1,6 @@
 const DEFAULT_FRONTEND_REQUEST_CONCURRENCY = 3;
 const DEFAULT_FRONTEND_REQUEST_WAIT_TIME = 0;
+const ENABLE_REQUEST_QUEUE_DEBUG = false;
 
 let activeRequestCount = 0;
 let requestSequence = 0;
@@ -90,6 +91,7 @@ const logRequestQueueState = (
   label: string,
   extra: Record<string, string | number> = {},
 ) => {
+  if (!ENABLE_REQUEST_QUEUE_DEBUG) return;
   const extraText = Object.entries(extra)
     .map(([key, value]) => `${key}=${value}`)
     .join(' ');

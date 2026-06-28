@@ -276,7 +276,6 @@ const fetchIcons = async () => {
       const hasCollection = iconCollectionColumns.value.some(
         (item) => item.value === form.iconCollectionUrl,
       );
-      console.log("hasCollection", hasCollection);
       if (!hasCollection) {
         const list = [
           {
@@ -314,7 +313,6 @@ const handleAddCustomIconCollection = () => {
 };
 
 const handleIcon = (icon) => {
-  console.log("icon", icon);
   hide();
   emit("setIcon", icon);
 };
@@ -337,7 +335,6 @@ const handleConfirm = ({ selectedValue, selectedOptions }) => {
 
 const handleCancel = () => {
   // showIconCollectionPicker.value = false;
-  console.log("cancel");
 };
 
 const syncIconCollectionState = () => {

@@ -1121,6 +1121,14 @@ const upload = async() => {
     console.error(e);
   }
 }
+
+const readTextFile = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result || ""));
+  reader.onerror = () => reject(reader.error || new Error("Failed to read file"));
+  reader.readAsText(file);
+});
+
 const summarizePreviewNodes = (nodes: any[]) => {
   return nodes.reduce<Record<string, number>>((result, node) => {
     const type = String(node?.type || t("specificWord.unknownType"));
@@ -1200,18 +1208,9 @@ const fileChange = async (event) => {
   const file = event.target.files[0];
   if(!file) return
   try {
-    const reader = new FileReader();
-    reader.readAsText(file);
-    reader.onload = async () => {
-      const content = String(reader.result || "");
-      cmStore.setEditCode("SubEditer", content);
-      await validateLocalContent(content, { notify: true });
-    }
-
-    reader.onerror = e => {
-      throw e
-    }
-    
+    const content = await readTextFile(file);
+    cmStore.setEditCode("SubEditer", content);
+    await validateLocalContent(content, { notify: true });
   } catch (e) {
     showNotify({
       type: "danger",
@@ -1368,6 +1367,16 @@ const submit = () => {
     });
     // 如果验证成功，开始保存/修改
     const data: any = JSON.parse(JSON.stringify(toRaw(form)));
+    if (editType === "subs" && data.source === "local") {
+      const isValidLocalContent = await validateLocalContent(localContentText.value, { notify: true });
+      if (!isValidLocalContent) {
+        isget.value = false;
+        Toast.hide("submits");
+        focusValidationErrorTab([{ prop: "content" }]);
+        return;
+      }
+      data.content = localContentText.value;
+    }
     delete data.proxy;
     delete data.mergeSources;
     data.tag = [

@@ -105,20 +105,13 @@ const isVisible = ref(props.visible);
 const keyword = ref("");
 const isAddTag = ref(false);
 const addTagValue = ref('');
-//拖拽开始的事件
-const onStartDrag = () => {
-  console.log("开始拖拽");
-};
+const onStartDrag = () => {};
 
-//拖拽结束的事件
-const onEndDrag = () => {
-  console.log("结束拖拽");
-};
+const onEndDrag = () => {};
 watch(
   () => props.visible,
   (newValue) => {
     isVisible.value = newValue;
-    console.log("newValue", newValue);
     if (newValue) {
       getTags();
     }
