@@ -67,14 +67,20 @@ export type RoutingTemplate = {
 
 export type RoutingTemplateConfig = {
   mixedPort?: number;
+  "mixed-port"?: number;
   allowLan?: boolean;
+  "allow-lan"?: boolean;
   mode?: string;
   logLevel?: string;
+  "log-level"?: string;
   dns?: Record<string, unknown>;
   sniffer?: Record<string, unknown>;
   proxyGroups?: TemplateProxyGroup[];
+  "proxy-groups"?: TemplateProxyGroup[];
   ruleProviders?: Record<string, unknown>;
+  "rule-providers"?: Record<string, unknown>;
   rules?: string[];
+  [key: string]: unknown;
 };
 
 export type TemplateProxyGroup = {

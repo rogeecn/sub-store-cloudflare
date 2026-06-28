@@ -11,6 +11,9 @@
         <nut-radio label="desc">
           {{ $t(`editorPage.subConfig.nodeActions['Sort Operator'].options[1]`) }}
         </nut-radio>
+        <nut-radio label="random">
+          {{ $t(`editorPage.subConfig.nodeActions['Sort Operator'].options[2]`) }}
+        </nut-radio>
       </nut-radiogroup>
     </div>
   </div>
@@ -29,7 +32,7 @@
   onMounted(() => {
     const item = form.process.find(item => item.id === id);
     if (item) {
-      value.value = item.args === 'desc' ? 'desc' : 'asc';
+      value.value = ['asc', 'desc', 'random'].includes(item.args) ? item.args : 'asc';
       item.args = value.value;
     }
   });
@@ -53,7 +56,7 @@
     .nut-radiogroup {
       width: 100%;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
     }
   }
 </style>

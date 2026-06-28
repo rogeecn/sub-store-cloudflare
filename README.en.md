@@ -102,6 +102,8 @@ https://substore.example.com/download/source/<source-id>/sing-box?token=<downloa
 
 `url` temporarily replaces the remote subscription URL, `content` is parsed as local node text, and `ua` temporarily overrides the User-Agent for fetching a remote subscription. These parameters affect only the current request. When a source enables pass-through User-Agent, the Worker forwards the subscription client's User-Agent while fetching the remote subscription.
 
+Custom routing templates apply to Mihomo output. You can import regular Mihomo YAML using keys such as `mixed-port`, `proxy-groups`, and `rule-providers`, or use the internal camelCase JSON keys such as `mixedPort`, `proxyGroups`, and `ruleProviders`.
+
 ## Acknowledgements
 
 This project is inspired by and pays respect to [sub-store-org/Sub-Store](https://github.com/sub-store-org/Sub-Store). The original project is the full-featured subscription management system; this repository focuses on a smaller Cloudflare-native deployment.

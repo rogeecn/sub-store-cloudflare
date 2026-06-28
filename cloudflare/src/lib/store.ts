@@ -590,7 +590,22 @@ function normalizeTemplateInput(input: unknown): Partial<TemplateRecord> | undef
 }
 
 function parseConfig(value: unknown) {
-  return value && typeof value === "object" ? (value as JsonObject) : BUILTIN_TEMPLATES[0].config;
+  return value && typeof value === "object" ? normalizeMihomoTemplateConfig(value as JsonObject) : BUILTIN_TEMPLATES[0].config;
+}
+
+function normalizeMihomoTemplateConfig(input: JsonObject) {
+  const output: JsonObject = { ...input };
+  copyAlias(output, "mixed-port", "mixedPort");
+  copyAlias(output, "allow-lan", "allowLan");
+  copyAlias(output, "log-level", "logLevel");
+  copyAlias(output, "proxy-groups", "proxyGroups");
+  copyAlias(output, "rule-providers", "ruleProviders");
+  return output;
+}
+
+function copyAlias(input: JsonObject, from: string, to: string) {
+  if (input[to] === undefined && input[from] !== undefined) input[to] = input[from];
+  delete input[from];
 }
 
 function normalizeMeta(input: unknown, fallback: unknown = {}): Record<string, unknown> {
@@ -628,8 +643,6 @@ function stringArray(value: unknown) {
 }
 
 function normalizeTargetValue(value: unknown): SubscriptionTarget {
-  const target = String(value || "mihomo").toLowerCase();
-  if (target === "sing-box" || target === "v2ray" || target === "uri" || target === "json") return target;
   return "mihomo";
 }
 

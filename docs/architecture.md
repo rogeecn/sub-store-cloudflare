@@ -110,19 +110,24 @@ Cloudflare Worker
 
 ## Templates
 
-模板也是 JSON 配置，保存在 D1。Mihomo 模板支持：
+模板保存在 D1，只应用于 Mihomo 输出。导入接口接受 JSON 或 YAML；常见 Mihomo YAML 键名会归一化成内部配置。
 
 - `mixedPort`
+- `mixed-port`
 - `allowLan`
+- `allow-lan`
 - `mode`
 - `logLevel`
+- `log-level`
 - `dns`
 - `sniffer`
 - `proxyGroups`
+- `proxy-groups`
 - `ruleProviders`
+- `rule-providers`
 - `rules`
 
-`proxyGroups[].proxies` 里可以使用 `$all`，生成时会展开为当前组合订阅里的全部节点。
+`proxyGroups[].proxies` 或 `proxy-groups[].proxies` 里可以使用 `$all`，生成时会展开为当前组合订阅里的全部节点。sing-box、v2ray、URI 和 JSON 输出使用同一套节点解析与过滤结果，但不读取 Mihomo 规则模板。
 
 ## 为什么只用 D1
 

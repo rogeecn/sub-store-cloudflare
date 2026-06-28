@@ -823,16 +823,21 @@ function formatInvalidLocalContentError(raw: string) {
 
 function renderMihomoYaml(proxies: ProxyNode[], requestUrl: URL, template?: RoutingTemplateConfig) {
   const config = template || {};
+  const mixedPort = config.mixedPort ?? config["mixed-port"] ?? 7890;
+  const allowLan = config.allowLan ?? config["allow-lan"] ?? false;
+  const logLevel = config.logLevel || config["log-level"] || "info";
+  const proxyGroups = config.proxyGroups || config["proxy-groups"] || defaultProxyGroups();
+  const ruleProviders = config.ruleProviders || config["rule-providers"];
   const document = {
-    "mixed-port": config.mixedPort ?? 7890,
-    "allow-lan": config.allowLan ?? false,
+    "mixed-port": mixedPort,
+    "allow-lan": allowLan,
     mode: config.mode || "rule",
-    "log-level": config.logLevel || "info",
+    "log-level": logLevel,
     ...(config.dns ? { dns: config.dns } : {}),
     ...(config.sniffer ? { sniffer: config.sniffer } : {}),
     proxies: proxies.map(stripUndefined),
-    "proxy-groups": renderTemplateProxyGroups(proxies, config.proxyGroups || defaultProxyGroups()),
-    ...(config.ruleProviders ? { "rule-providers": config.ruleProviders } : {}),
+    "proxy-groups": renderTemplateProxyGroups(proxies, proxyGroups),
+    ...(ruleProviders ? { "rule-providers": ruleProviders } : {}),
     rules: config.rules && config.rules.length > 0 ? config.rules : ["MATCH,🚀 节点选择"],
   };
 

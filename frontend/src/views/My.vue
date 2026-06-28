@@ -135,7 +135,7 @@
         <h2>{{ templateEditingId ? "编辑规则模板" : "导入规则模板" }}</h2>
         <nut-input class="input" v-model.trim="templateForm.id" placeholder="模板 ID，例如 custom-mihomo" input-align="left" :disabled="Boolean(templateEditingId)" />
         <nut-input class="input" v-model.trim="templateForm.name" placeholder="显示名称，例如 Custom Mihomo" input-align="left" />
-        <nut-cell class="template-target-trigger" title="输出格式" :desc="templateTargetLabel" is-link @click="openTemplateTargetPicker" />
+        <nut-cell class="template-target-trigger" title="输出格式" desc="mihomo" />
         <div class="template-content-editor">
           <cmView :is-read-only="false" id="TemplateEditor" />
         </div>
@@ -144,15 +144,6 @@
         </nut-button>
       </div>
     </nut-popup>
-    <DesktopPicker
-      v-model="selectedTemplateTarget"
-      v-model:visible="showTemplateTargetPicker"
-      :columns="templateTargetColumns"
-      title="输出格式"
-      cancel-text="取消"
-      ok-text="确定"
-      @confirm="handleTemplateTargetConfirm"
-    />
   </div>
 </template>
 
@@ -162,7 +153,6 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 import { Dialog } from "@nutui/nutui";
 
 import { useCloudflareApi } from "@/api/app";
-import DesktopPicker from "@/components/DesktopPicker.vue";
 import LanguageSwitcherButton from "@/components/LanguageSwitcherButton.vue";
 import { useSettingsApi } from "@/api/settings";
 import { useBackend } from "@/hooks/useBackend";
@@ -188,8 +178,6 @@ const requestSaving = ref(false);
 const templateImporting = ref(false);
 const templateImportVisible = ref(false);
 const templateEditingId = ref("");
-const showTemplateTargetPicker = ref(false);
-const selectedTemplateTarget = ref<string[]>(["mihomo"]);
 const templates = ref<any[]>([]);
 const simpleMode = ref(Boolean(appearanceSetting.value.isSimpleMode));
 const wideScreenNarrowMode = ref(Boolean(appearanceSetting.value.useNarrowModeOnWideScreen));
@@ -206,15 +194,6 @@ const templateForm = reactive({
   name: "",
   target: "mihomo",
 });
-const templateTargetColumns = [
-  { text: "mihomo", value: "mihomo" },
-  { text: "sing-box", value: "sing-box" },
-  { text: "v2ray", value: "v2ray" },
-  { text: "uri", value: "uri" },
-  { text: "json", value: "json" },
-];
-const templateTargetLabel = computed(() => templateForm.target || "mihomo");
-
 const appName = computed(() => {
   return env.value?.app
     || env.value?.meta?.cloudflare?.env?.SUB_STORE_BACKEND_CUSTOM_NAME
@@ -295,7 +274,6 @@ const openTemplateImport = () => {
   templateForm.id = "";
   templateForm.name = "";
   templateForm.target = "mihomo";
-  selectedTemplateTarget.value = [templateForm.target];
   cmStore.setEditCode(TEMPLATE_EDITOR_ID, "");
   templateImportVisible.value = true;
 };
@@ -304,22 +282,9 @@ const openTemplateEdit = (template: any) => {
   templateEditingId.value = template.name;
   templateForm.id = template.name;
   templateForm.name = template.displayName || template.name;
-  templateForm.target = template.target || "mihomo";
-  selectedTemplateTarget.value = [templateForm.target];
+  templateForm.target = "mihomo";
   cmStore.setEditCode(TEMPLATE_EDITOR_ID, JSON.stringify(template.config || {}, null, 2));
   templateImportVisible.value = true;
-};
-
-const openTemplateTargetPicker = () => {
-  selectedTemplateTarget.value = [templateForm.target || "mihomo"];
-  showTemplateTargetPicker.value = true;
-};
-
-const handleTemplateTargetConfirm = ({ selectedValue }) => {
-  const nextValue = selectedValue[0] || "mihomo";
-  selectedTemplateTarget.value = [nextValue];
-  templateForm.target = nextValue;
-  showTemplateTargetPicker.value = false;
 };
 
 const importTemplateFromFile = async (event: Event) => {
@@ -332,7 +297,6 @@ const importTemplateFromFile = async (event: Event) => {
   templateForm.id = file.name.replace(/\.(json|ya?ml)$/i, "").toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
   templateForm.name = file.name.replace(/\.(json|ya?ml)$/i, "");
   templateForm.target = "mihomo";
-  selectedTemplateTarget.value = [templateForm.target];
   cmStore.setEditCode(TEMPLATE_EDITOR_ID, await file.text());
   templateImportVisible.value = true;
 };

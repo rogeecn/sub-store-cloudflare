@@ -36,6 +36,37 @@ const REGION_PATTERNS: Record<string, string> = {
   KR: '韩国|韓國|首尔|首爾|Korea|Seoul|\\bKR\\b',
 };
 
+const TYPE_FILTER_VALUES = [
+  'ss',
+  'ssr',
+  'vmess',
+  'vless',
+  'trojan',
+  'http',
+  'h2-connect',
+  'socks5',
+  'snell',
+  'tuic',
+  'hysteria',
+  'hysteria2',
+  'juicity',
+  'mieru',
+  'sudoku',
+  'masque',
+  'anytls',
+  'trusttunnel',
+  'openvpn',
+  'gost-relay',
+  'tailscale',
+  'wireguard',
+  'ssh',
+  'external',
+  'direct',
+];
+
+const TYPE_FILTER_PATTERN_PREFIX = '^(?:';
+const TYPE_FILTER_PATTERN_SUFFIX = ')$';
+
 const toApiListType = (type: string): ApiListType => (type === 'collections' || type === 'collection' ? 'collections' : 'sources');
 const toUiListType = (type: string): UiListType => (type === 'collections' || type === 'collection' ? 'collections' : 'subs');
 
@@ -63,6 +94,28 @@ const regexUnion = (items: unknown[]): string => {
     .filter(Boolean)
     .map(item => `(?:${item})`)
     .join('|');
+};
+
+const escapeRegexLiteral = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const exactTypePattern = (items: unknown[]): string => {
+  const values = items
+    .map(item => String(item || '').trim())
+    .filter(Boolean)
+    .map(escapeRegexLiteral);
+  return values.length > 0 ? `${TYPE_FILTER_PATTERN_PREFIX}${values.join('|')}${TYPE_FILTER_PATTERN_SUFFIX}` : '';
+};
+
+const typeValuesFromPattern = (pattern: unknown): string[] => {
+  const text = String(pattern || '');
+  if (text.startsWith(TYPE_FILTER_PATTERN_PREFIX) && text.endsWith(TYPE_FILTER_PATTERN_SUFFIX)) {
+    return text
+      .slice(TYPE_FILTER_PATTERN_PREFIX.length, -TYPE_FILTER_PATTERN_SUFFIX.length)
+      .split('|')
+      .map(item => item.replace(/\\([.*+?^${}()|[\]\\])/g, '$1'))
+      .filter(item => TYPE_FILTER_VALUES.includes(item));
+  }
+  return [];
 };
 
 const normalizeUiProcess = (process: unknown): JsonMap[] => {
@@ -107,7 +160,7 @@ const toApiFilters = (process: unknown) => {
 
     if (item.type === 'Type Filter') {
       const values = Array.isArray(item.args?.value) ? item.args.value : Array.isArray(item.args) ? item.args : [];
-      const pattern = regexUnion(values);
+      const pattern = exactTypePattern(values);
       if (!pattern) return [];
       return [{ type: item.args?.keep === false ? 'exclude' : 'include', field: 'type', pattern }];
     }
@@ -183,6 +236,20 @@ const fromApiFilters = (filters: unknown): UiProcess[] => {
     .filter((filter): filter is JsonMap => Boolean(filter) && typeof filter === 'object')
     .forEach((filter) => {
       if (filter.type === 'include' || filter.type === 'exclude') {
+        if (filter.field === 'type') {
+          const typeValues = typeValuesFromPattern(filter.pattern);
+          if (typeValues.length > 0) {
+            output.push({
+              id: newUiId(),
+              type: 'Type Filter',
+              args: {
+                keep: filter.type === 'include',
+                value: typeValues,
+              },
+            });
+            return;
+          }
+        }
         output.push({
           id: newUiId(),
           type: 'Regex Filter',

@@ -199,7 +199,9 @@ Worker API 保存的过滤器是这版自己的小型 JSON DSL，不暴露前端
 ]
 ```
 
-模板中的 `proxyGroups[].proxies` 可以写 `$all`，生成订阅时会展开为当前组合里的全部节点。
+规则模板只应用于 Mihomo 输出。自定义模板可以导入常见 Mihomo YAML，也可以使用 JSON；导入时会识别 `mixed-port`、`allow-lan`、`log-level`、`proxy-groups`、`rule-providers` 这些 Mihomo 键名，并转换为内部配置。
+
+模板中的 `proxyGroups[].proxies` 或 `proxy-groups[].proxies` 可以写 `$all`，生成订阅时会展开为当前组合里的全部节点。
 
 ## 内置模板
 
