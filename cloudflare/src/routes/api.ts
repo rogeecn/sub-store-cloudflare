@@ -164,7 +164,7 @@ apiRoutes.post("/preview/source", async (c) => {
   const input = await c.req.json<JsonMap>();
   try {
     if (input.source === "local" || input.content) {
-      return success(c, previewSourceContent(toSubscriptionSource(input)));
+      return success(c, await previewSourceContent(toSubscriptionSource(input), await getSettings(c.env)));
     }
     const source = toSubscriptionSource(input);
     return success(c, await previewSubscription({ source, sources: [source], settings: await getSettings(c.env) }));
@@ -297,7 +297,7 @@ function fromApiSource(input: JsonMap): Partial<SourceRecord> {
     url: stringValue(input.url),
     content: stringValue(input.content),
     enabled: input.enabled !== false,
-    filters: filterList(input.filters),
+    filters: filterList(input.filters, input.process),
     meta: objectValue(input.meta),
   };
 }
@@ -326,7 +326,7 @@ function fromApiCollection(input: JsonMap): Partial<CollectionRecord> {
     id,
     name,
     sourceIds: stringArray(input.sourceIds),
-    filters: filterList(input.filters),
+    filters: filterList(input.filters, input.process),
     templateId: stringValue(input.templateId) || undefined,
     ignoreFailed: input.ignoreFailed !== false,
     enabled: input.enabled !== false,
@@ -555,8 +555,32 @@ function objectValue(input: unknown): JsonMap {
   return input && typeof input === "object" && !Array.isArray(input) ? (input as JsonMap) : {};
 }
 
-function filterList(input: unknown): FilterRule[] {
-  return Array.isArray(input) ? (input.filter((item) => item && typeof item === "object") as FilterRule[]) : [];
+function filterList(input: unknown, process?: unknown): FilterRule[] {
+  const direct = Array.isArray(input) ? (input.filter((item) => item && typeof item === "object") as FilterRule[]) : [];
+  if (direct.length > 0 || !Array.isArray(process)) return direct;
+  return process.flatMap((item) => processToFilter(item)).filter(Boolean) as FilterRule[];
+}
+
+function processToFilter(input: unknown): FilterRule | FilterRule[] | undefined {
+  const item = objectValue(input);
+  if (!item.type || item.disabled === true) return undefined;
+  const args = objectValue(item.args);
+  if (["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "flag", "quick", "resolve"].includes(String(item.type))) {
+    const { id: _id, customName: _customName, disabled: _disabled, ...filter } = item;
+    return filter as FilterRule;
+  }
+  if (item.type === "Resolve Domain Operator") {
+    return {
+      type: "resolve",
+      provider: stringValue(args.provider) || "Cloudflare",
+      recordType: args.type === "IPv6" ? "AAAA" : "A",
+      filter: stringValue(args.filter) || "disabled",
+      url: stringValue(args.url),
+      edns: stringValue(args.edns),
+      concurrency: args.concurrency === undefined ? "" : String(args.concurrency),
+    };
+  }
+  return undefined;
 }
 
 function stringArray(input: unknown): string[] {

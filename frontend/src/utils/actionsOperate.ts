@@ -30,8 +30,16 @@ export const addItem = (
   actionsChecked.push([id, previewEnabled]);
   switch (type) {
     case 'Flag Operator':
+    case 'Resolve Domain Operator':
       obj.component = shallowRef(ActionRadio);
-      form.process.push({ id, type, args: args ?? { mode: 'add', tw: 'cn' }, customName });
+      form.process.push({
+        id,
+        type,
+        args: args ?? (type === 'Resolve Domain Operator'
+          ? { provider: 'Cloudflare', type: 'IPv4', filter: 'disabled', cache: 'disabled', url: '', edns: '', concurrency: '' }
+          : { mode: 'add', tw: 'cn' }),
+        customName,
+      });
       break;
     case 'Sort Operator':
       obj.component = shallowRef(Sort);

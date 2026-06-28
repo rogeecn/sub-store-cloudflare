@@ -21,6 +21,7 @@ export type FilterRule = {
     | "regex-sort"
     | "flag"
     | "quick"
+    | "resolve"
     | string;
   field?: string;
   fields?: string[];
@@ -33,6 +34,12 @@ export type FilterRule = {
   link?: string;
   position?: "front" | "back";
   template?: string;
+  provider?: string;
+  recordType?: "A" | "AAAA" | string;
+  filter?: "disabled" | "removeFailed" | "IPOnly" | "IPv4Only" | "IPv6Only" | string;
+  url?: string;
+  edns?: string;
+  concurrency?: number | string;
   [key: string]: unknown;
 };
 

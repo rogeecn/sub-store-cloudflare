@@ -18,6 +18,7 @@ const SOURCE_ACTION_TYPES = new Set([
   'Type Filter',
   'Regex Filter',
   'Flag Operator',
+  'Resolve Domain Operator',
   'Regex Sort Operator',
   'Regex Delete Operator',
   'Regex Rename Operator',
@@ -222,6 +223,18 @@ const toApiFilters = (process: unknown) => {
       return [{ type: 'flag', mode: item.args?.mode || 'add', tw: item.args?.tw || 'cn' }];
     }
 
+    if (item.type === 'Resolve Domain Operator') {
+      return [{
+        type: 'resolve',
+        provider: item.args?.provider || 'Cloudflare',
+        recordType: item.args?.type === 'IPv6' ? 'AAAA' : 'A',
+        filter: item.args?.filter || 'disabled',
+        url: item.args?.url || '',
+        edns: item.args?.edns || '',
+        concurrency: item.args?.concurrency || '',
+      }];
+    }
+
     return [];
   });
 };
@@ -325,6 +338,22 @@ const fromApiFilters = (filters: unknown): UiProcess[] => {
           },
         });
         return;
+      }
+
+      if (filter.type === 'resolve') {
+        output.push({
+          id: newUiId(),
+          type: 'Resolve Domain Operator',
+          args: {
+            provider: filter.provider || 'Cloudflare',
+            type: filter.recordType === 'AAAA' ? 'IPv6' : 'IPv4',
+            filter: filter.filter || 'disabled',
+            cache: 'disabled',
+            url: filter.url || '',
+            edns: filter.edns || '',
+            concurrency: filter.concurrency || '',
+          },
+        });
       }
 
       if (filter.type === 'quick') {

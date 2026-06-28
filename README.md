@@ -14,7 +14,7 @@ English: [README.en.md](README.en.md)
 
 - 管理远程订阅 URL 和本地节点文本。
 - 把多个订阅源组合成一个云端组合订阅。
-- 对节点做区域/类型/正则过滤、重命名、正则删除、去重、正则排序、旗帜处理和常用属性设置。
+- 对节点做区域/类型/正则过滤、重命名、正则删除、去重、正则排序、域名解析、旗帜处理和常用属性设置。
 - 内置常用 Mihomo 分流模板，也支持导入自己的 JSON/YAML 模板。
 - 在网页里预览处理前后的节点列表，并校验本地节点内容。
 - 支持订阅流量信息、配置备份/恢复、远程订阅请求超时、User-Agent、透传 User-Agent 和并发参数。
@@ -172,7 +172,7 @@ https://substore.example.com/download/source/<source-id>/sing-box?token=<downloa
 | --- | --- |
 | Sources | 远程订阅 URL 或本地节点文本。 |
 | Collections | 多个 Sources 的组合订阅。 |
-| Filters | 节点包含、排除、正则删除、重命名、去重、排序、旗帜和常用属性设置。 |
+| Filters | 节点包含、排除、正则删除、重命名、去重、排序、域名解析、旗帜和常用属性设置。 |
 | Templates | Mihomo 的代理组、规则提供者和规则列表。 |
 
 Worker API 保存的过滤器是这版自己的小型 JSON DSL，不暴露前端编辑器内部字段：

@@ -77,18 +77,20 @@ export async function previewSubscription(options: Pick<BuildOptions, "source" |
     getRequestConcurrencyWait(options.settings),
   );
   const original = addPreviewIds(originalLists.flat());
-  const processed = addPreviewIds(ensureUniqueProxyNames(applyFilters(originalLists.map((nodes, index) => {
-    const source = sources[index];
-    return applyFilters(nodes, getFilters(source));
-  }).flat(), getFilters(options.collection))));
+  const processedLists = await runWithConcurrency(
+    originalLists.map((nodes, index) => async () => applyFilters(nodes, getFilters(sources[index]), options.settings)),
+    getRequestConcurrency(options.settings),
+    getRequestConcurrencyWait(options.settings),
+  );
+  const processed = addPreviewIds(ensureUniqueProxyNames(await applyFilters(processedLists.flat(), getFilters(options.collection), options.settings)));
 
   return { original, processed };
 }
 
-export function previewSourceContent(source: SubscriptionSource) {
+export async function previewSourceContent(source: SubscriptionSource, settings?: AppSettings) {
   const original = parseProxies(decodeMaybeBase64(source.content || source.url || ""));
   if (original.length === 0) throw new Error(formatInvalidLocalContentError(source.content || source.url || ""));
-  const processed = ensureUniqueProxyNames(applyFilters(original, getFilters(source)));
+  const processed = ensureUniqueProxyNames(await applyFilters(original, getFilters(source), settings));
   return {
     original: addPreviewIds(original),
     processed: addPreviewIds(processed),
@@ -105,14 +107,14 @@ async function loadProxyNodes(options: BuildOptions) {
   const sources = getSources(options).filter((sub) => sub.enabled !== false);
   if (sources.length === 0) return [];
 
-  const tasks = sources.map((sub) => async () => applyFilters(parseProxies(await loadSubscriptionRaw(sub, options.settings, options.requestUserAgent)), getFilters(sub)));
+  const tasks = sources.map((sub) => async () => applyFilters(parseProxies(await loadSubscriptionRaw(sub, options.settings, options.requestUserAgent)), getFilters(sub), options.settings));
   const proxyLists = options.collection?.ignoreFailed
     ? (await runSettledWithConcurrency(tasks, getRequestConcurrency(options.settings), getRequestConcurrencyWait(options.settings))).flatMap((result) =>
         result.status === "fulfilled" ? [result.value] : [],
       )
     : await runWithConcurrency(tasks, getRequestConcurrency(options.settings), getRequestConcurrencyWait(options.settings));
 
-  return ensureUniqueProxyNames(applyFilters(proxyLists.flat(), getFilters(options.collection)));
+  return ensureUniqueProxyNames(await applyFilters(proxyLists.flat(), getFilters(options.collection), options.settings));
 }
 
 function getSources(options: BuildOptions) {
@@ -547,20 +549,22 @@ function parseWireGuard(line: string, index: number): ProxyNode {
   });
 }
 
-function applyFilters(proxies: ProxyNode[], filters: FilterRule[]) {
-  return filters.reduce((current, filter) => {
-    if (!filter || typeof filter !== "object") return current;
-    if (filter.type === "include") return matchFilter(current, filter, true);
-    if (filter.type === "exclude") return matchFilter(current, filter, false);
-    if (filter.type === "rename") return renameProxies(current, filter);
-    if (filter.type === "delete-field") return deleteFieldMatches(current, filter);
-    if (filter.type === "dedupe") return handleDuplicateProxies(current, filter);
-    if (filter.type === "sort") return sortProxies(current, filter.direction || "asc");
-    if (filter.type === "regex-sort") return regexSortProxies(current, filter);
-    if (filter.type === "flag") return flagProxies(current, filter);
-    if (filter.type === "quick") return applyQuickSettings(current, filter);
-    return current;
-  }, proxies);
+async function applyFilters(proxies: ProxyNode[], filters: FilterRule[], settings?: AppSettings) {
+  let current = proxies;
+  for (const filter of filters) {
+    if (!filter || typeof filter !== "object") continue;
+    if (filter.type === "include") current = matchFilter(current, filter, true);
+    else if (filter.type === "exclude") current = matchFilter(current, filter, false);
+    else if (filter.type === "rename") current = renameProxies(current, filter);
+    else if (filter.type === "delete-field") current = deleteFieldMatches(current, filter);
+    else if (filter.type === "dedupe") current = handleDuplicateProxies(current, filter);
+    else if (filter.type === "sort") current = sortProxies(current, filter.direction || "asc");
+    else if (filter.type === "regex-sort") current = regexSortProxies(current, filter);
+    else if (filter.type === "flag") current = flagProxies(current, filter);
+    else if (filter.type === "quick") current = applyQuickSettings(current, filter);
+    else if (filter.type === "resolve") current = await resolveProxyDomains(current, filter, settings);
+  }
+  return current;
 }
 
 function matchFilter(proxies: ProxyNode[], filter: FilterRule, keepMatches: boolean) {
@@ -724,6 +728,113 @@ function applyQuickSettings(proxies: ProxyNode[], filter: FilterRule) {
     if (output.type === "vmess") applyState(output, "aead", filter["vmess aead"]);
     return output;
   });
+}
+
+async function resolveProxyDomains(proxies: ProxyNode[], filter: FilterRule, settings?: AppSettings) {
+  const tasks = proxies.map((proxy) => async () => resolveProxyDomain(proxy, filter, settings));
+  const resolved = await runWithConcurrency(tasks, getResolveConcurrency(filter, settings), getRequestConcurrencyWait(settings));
+  const mode = String(filter.filter || "disabled");
+
+  return resolved
+    .filter(({ proxy, resolved }) => {
+      if (mode === "removeFailed") return resolved || !shouldResolveServer(proxy.server);
+      if (mode === "IPOnly") return isIpAddress(String(proxy.server || ""));
+      if (mode === "IPv4Only") return isIpv4(String(proxy.server || ""));
+      if (mode === "IPv6Only") return isIpv6(String(proxy.server || ""));
+      return true;
+    })
+    .map(({ proxy }) => proxy);
+}
+
+async function resolveProxyDomain(proxy: ProxyNode, filter: FilterRule, settings?: AppSettings) {
+  const server = String(proxy.server || "");
+  if (!shouldResolveServer(server)) return { proxy, resolved: false };
+
+  try {
+    const address = await resolveHostname(server, filter, settings);
+    if (!address) return { proxy, resolved: false };
+    return { proxy: preserveTlsServerName({ ...proxy, server: address }, server), resolved: true };
+  } catch {
+    return { proxy, resolved: false };
+  }
+}
+
+function preserveTlsServerName(proxy: ProxyNode, originalServer: string) {
+  const next = { ...proxy };
+  if (proxy.type === "vless" || proxy.type === "vmess") {
+    if (!next.servername) next.servername = originalServer;
+  }
+  if (["trojan", "hysteria", "hysteria2", "tuic", "anytls"].includes(String(proxy.type))) {
+    if (!next.sni) next.sni = originalServer;
+  }
+  return next;
+}
+
+async function resolveHostname(hostname: string, filter: FilterRule, settings?: AppSettings) {
+  const recordType = getResolveRecordType(filter);
+  const url = getResolveEndpoint(filter, hostname, recordType);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), getRequestTimeout(settings));
+  try {
+    const response = await fetch(url, {
+      headers: { accept: "application/dns-json", "user-agent": stringSetting(settings?.defaultUserAgent) || "sub-store-cloudflare" },
+      signal: controller.signal,
+    });
+    if (!response.ok) return "";
+    const payload = (await response.json()) as { Answer?: Array<{ type?: number; data?: string }> };
+    const answerType = recordType === "AAAA" ? 28 : 1;
+    return (payload.Answer || [])
+      .map((answer) => (answer.type === answerType ? String(answer.data || "") : ""))
+      .find((item) => (recordType === "AAAA" ? isIpv6(item) : isIpv4(item))) || "";
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function getResolveEndpoint(filter: FilterRule, hostname: string, recordType: "A" | "AAAA") {
+  const provider = String(filter.provider || "Cloudflare");
+  const baseUrl = provider === "Google"
+    ? "https://dns.google/resolve"
+    : provider === "Ali"
+      ? "https://dns.alidns.com/resolve"
+      : provider === "Tencent"
+        ? "https://doh.pub/resolve"
+        : provider === "Custom" && typeof filter.url === "string" && /^https:\/\//i.test(filter.url)
+          ? filter.url
+          : "https://cloudflare-dns.com/dns-query";
+  const url = new URL(baseUrl);
+  url.searchParams.set("name", hostname);
+  url.searchParams.set("type", recordType);
+  if (filter.edns && provider !== "Cloudflare") url.searchParams.set("edns_client_subnet", String(filter.edns));
+  return url.toString();
+}
+
+function getResolveRecordType(filter: FilterRule): "A" | "AAAA" {
+  const value = String(filter.recordType || filter.typeValue || filter.resolveType || filter["resolve-type"] || "").toUpperCase();
+  if (value === "IPV6" || value === "AAAA") return "AAAA";
+  return "A";
+}
+
+function getResolveConcurrency(filter: FilterRule, settings?: AppSettings) {
+  return numberSetting(filter.concurrency, getRequestConcurrency(settings), 1, 12);
+}
+
+function shouldResolveServer(server: unknown) {
+  const value = String(server || "").trim();
+  return Boolean(value && !isIpAddress(value) && /^[a-z0-9.-]+$/i.test(value) && value.includes("."));
+}
+
+function isIpAddress(value: string) {
+  return isIpv4(value) || isIpv6(value);
+}
+
+function isIpv4(value: string) {
+  const parts = value.split(".");
+  return parts.length === 4 && parts.every((part) => /^\d+$/.test(part) && Number(part) >= 0 && Number(part) <= 255);
+}
+
+function isIpv6(value: string) {
+  return value.includes(":") && /^[0-9a-f:]+$/i.test(value);
 }
 
 function applyState(proxy: ProxyNode, key: string, value: unknown) {

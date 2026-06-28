@@ -1042,8 +1042,9 @@ watchEffect(() => {
           component: null,
           enabled: !disabled,
         };
-        switch (type) {
+          switch (type) {
           case "Flag Operator":
+          case "Resolve Domain Operator":
             action.component = shallowRef(ActionRadio);
             break;
           case "Sort Operator":

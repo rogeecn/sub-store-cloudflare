@@ -8,7 +8,7 @@ Chinese is the primary documentation language for this repository. See [README.m
 
 - Manages remote subscription URLs and local node text.
 - Combines multiple sources into one cloud-side collection.
-- Filters by region, type, and regex; renames, deletes matched name text, deduplicates, regex-sorts, adds/removes flags, and applies common node options.
+- Filters by region, type, and regex; renames, deletes matched name text, deduplicates, regex-sorts, resolves node hostnames, adds/removes flags, and applies common node options.
 - Provides built-in Mihomo routing templates and supports custom JSON/YAML templates.
 - Previews original and processed node lists in the admin UI, with local node validation.
 - Supports subscription usage info, config backup/restore, and request options such as User-Agent, pass-through User-Agent, timeout, and remote fetch concurrency.

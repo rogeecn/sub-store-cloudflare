@@ -60,16 +60,6 @@
           </nut-radio>
         </nut-radiogroup>
       </div>
-      <div class="radio-wrapper options-radio">
-        <p class="des-label">缓存</p>
-        <nut-radiogroup direction="horizontal" v-model="rdoCache">
-          <nut-radio v-for="(key, index) in rdoCacheOpt" :label="key" :key="index"
-            >{{
-              $t(`editorPage.subConfig.nodeActions['${type}'].cache[${index}]`)
-            }}
-          </nut-radio>
-        </nut-radiogroup>
-      </div>
     </template>
     <template v-if="type === 'Flag Operator' && foNewVersion && value === 'add'">
       <div class="radio-wrapper options-radio">
@@ -124,7 +114,6 @@
   const foTwOpt = ['cn', 'ws', 'tw'];
   const rdoTypeOpt = ['IPv4', 'IPv6'];
   const rdoFilterOpt = ['disabled', 'removeFailed', 'IPOnly', 'IPv4Only', 'IPv6Only'];
-  const rdoCacheOpt = ['enabled' , 'disabled'];
 
   const value = ref();
   const rdoNewVersion = ref(true);
@@ -143,7 +132,7 @@
   const foTw = ref('cn');
   const rdoType = ref('IPv4');
   const rdoFilter = ref('disabled');
-  const rdoCache = ref('enabled');
+  const rdoCache = ref('disabled');
   const rdoUrl = ref('');
   const rdoEdns = ref('');
   const rdoConcurrency = ref('');
