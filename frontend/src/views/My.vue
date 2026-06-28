@@ -70,9 +70,14 @@
             <span class="template-title">{{ template.displayName || template.name }}</span>
             <span class="template-meta">{{ template.readonly ? "内置模板" : "自定义模板" }} · {{ template.target || "mihomo" }}</span>
           </div>
-          <nut-button v-if="!template.readonly" plain type="danger" size="mini" @click="deleteCustomTemplate(template.name)">
-            删除
-          </nut-button>
+          <div class="template-actions">
+            <nut-button v-if="!template.readonly" plain type="primary" size="mini" @click="openTemplateEdit(template)">
+              编辑
+            </nut-button>
+            <nut-button v-if="!template.readonly" plain type="danger" size="mini" @click="deleteCustomTemplate(template.name)">
+              删除
+            </nut-button>
+          </div>
         </div>
       </div>
     </section>
@@ -127,8 +132,8 @@
 
     <nut-popup v-model:visible="templateImportVisible" position="bottom" round closeable :style="{ height: '82vh' }">
       <div class="template-import-panel">
-        <h2>导入规则模板</h2>
-        <nut-input class="input" v-model.trim="templateForm.id" placeholder="模板 ID，例如 custom-mihomo" input-align="left" />
+        <h2>{{ templateEditingId ? "编辑规则模板" : "导入规则模板" }}</h2>
+        <nut-input class="input" v-model.trim="templateForm.id" placeholder="模板 ID，例如 custom-mihomo" input-align="left" :disabled="Boolean(templateEditingId)" />
         <nut-input class="input" v-model.trim="templateForm.name" placeholder="显示名称，例如 Custom Mihomo" input-align="left" />
         <select v-model="templateForm.target" class="template-target-select">
           <option value="mihomo">mihomo</option>
@@ -172,6 +177,7 @@ const requestEditing = ref(false);
 const requestSaving = ref(false);
 const templateImporting = ref(false);
 const templateImportVisible = ref(false);
+const templateEditingId = ref("");
 const templates = ref<any[]>([]);
 const simpleMode = ref(Boolean(appearanceSetting.value.isSimpleMode));
 const wideScreenNarrowMode = ref(Boolean(appearanceSetting.value.useNarrowModeOnWideScreen));
@@ -266,10 +272,20 @@ const selectTemplateFile = () => {
 };
 
 const openTemplateImport = () => {
+  templateEditingId.value = "";
   templateForm.id = "";
   templateForm.name = "";
   templateForm.target = "mihomo";
   templateForm.content = "";
+  templateImportVisible.value = true;
+};
+
+const openTemplateEdit = (template: any) => {
+  templateEditingId.value = template.name;
+  templateForm.id = template.name;
+  templateForm.name = template.displayName || template.name;
+  templateForm.target = template.target || "mihomo";
+  templateForm.content = JSON.stringify(template.config || {}, null, 2);
   templateImportVisible.value = true;
 };
 
@@ -279,6 +295,7 @@ const importTemplateFromFile = async (event: Event) => {
   target.value = "";
   if (!file) return;
 
+  templateEditingId.value = "";
   templateForm.id = file.name.replace(/\.(json|ya?ml)$/i, "").toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
   templateForm.name = file.name.replace(/\.(json|ya?ml)$/i, "");
   templateForm.target = "mihomo";
@@ -294,15 +311,19 @@ const saveTemplate = async () => {
 
   templateImporting.value = true;
   try {
-    const res = await cloudflareApi.createTemplate({
+    const payload = {
       id: templateForm.id,
       name: templateForm.name || templateForm.id,
       target: templateForm.target,
       content: templateForm.content,
-    });
+    };
+    const res = templateEditingId.value
+      ? await cloudflareApi.updateTemplate(templateEditingId.value, payload)
+      : await cloudflareApi.createTemplate(payload);
     if (res?.data?.status !== "success") throw new Error("import failed");
     await fetchTemplates();
     templateImportVisible.value = false;
+    templateEditingId.value = "";
     showNotify({ type: "success", title: "模板已保存" });
   } catch (error) {
     showNotify({ type: "danger", title: `模板保存失败\n${error instanceof Error ? error.message : String(error)}` });
@@ -520,6 +541,13 @@ onMounted(fetchTemplates);
 .template-meta {
   font-size: 12px;
   color: var(--comment-text-color);
+}
+
+.template-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .template-import-panel {

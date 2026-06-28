@@ -288,23 +288,26 @@
         </template>
 
         <template v-else-if="editType === 'collections'">
-          <nut-form-item
-            label="规则模板"
-            prop="templateId"
-          >
-            <select
-              v-model="form.templateId"
-              class="nut-input-text"
-            >
-              <option
-                v-for="template in templateOptions"
-                :key="template.name"
-                :value="template.name"
-              >
-                {{ template.displayName || template.name }}
-              </option>
-            </select>
-          </nut-form-item>
+          <nut-cell class="nut-form-item line template-trigger" @click.stop="openTemplatePicker">
+            <view class="nut-cell__title nut-form-item__label">
+              规则模板
+            </view>
+            <view class="nut-cell__value nut-form-item__body">
+              <view class="nut-form-item__body__slots">
+                <nut-input
+                  :model-value="selectedTemplateLabel"
+                  :border="false"
+                  class="nut-input-text template-trigger-input"
+                  readonly
+                  input-align="right"
+                  left-icon="tips"
+                  right-icon="rect-right"
+                  @click-left-icon.stop="templateTips"
+                  @click-right-icon.stop="openTemplatePicker"
+                />
+              </view>
+            </view>
+          </nut-cell>
           <!-- subscriptionTags -->
           <nut-form-item
             :label="$t(`editorPage.subConfig.basic.subscriptionTags.label`)"
@@ -505,6 +508,15 @@
     :cancel-text="$t(`editorPage.subConfig.sourceNamePicker.cancel`)"
     :ok-text="$t(`editorPage.subConfig.sourceNamePicker.confirm`)"
     @confirm="handleSubFailureModeConfirm"
+  />
+  <DesktopPicker
+    v-model="selectedTemplateValue"
+    v-model:visible="showTemplatePicker"
+    :columns="templateColumns"
+    title="选择规则模板"
+    :cancel-text="$t(`editorPage.subConfig.sourceNamePicker.cancel`)"
+    :ok-text="$t(`editorPage.subConfig.sourceNamePicker.confirm`)"
+    @confirm="handleTemplateConfirm"
   />
   <tag-popup
     v-model:visible="tagPopupVisible"
@@ -844,6 +856,36 @@ const selectedSubsDisplay = computed(() => selectedSubs.value.replace(/^:\s*/, "
   usePopupRoute(compareTableIsVisible);
   const compareData = ref();
   const templateOptions = ref<any[]>([]);
+  const showTemplatePicker = ref(false);
+  const selectedTemplateValue = ref<string[]>([]);
+  const selectedTemplate = computed(() => {
+    return templateOptions.value.find((template) => template.name === form.templateId);
+  });
+  const selectedTemplateLabel = computed(() => {
+    const template = selectedTemplate.value;
+    if (!template) return form.templateId || "ACL4SSR Mihomo";
+    return template.displayName || template.name;
+  });
+  const templateColumns = computed(() => {
+    return templateOptions.value.map((template) => {
+      const label = template.displayName || template.name;
+      const type = template.readonly ? "内置" : "自定义";
+      return {
+        text: `${label}（${type} · ${template.target || "mihomo"}）`,
+        value: template.name,
+      };
+    });
+  });
+  const openTemplatePicker = () => {
+    selectedTemplateValue.value = [form.templateId || templateColumns.value[0]?.value || "acl4ssr-mihomo"];
+    showTemplatePicker.value = true;
+  };
+  const handleTemplateConfirm = ({ selectedValue }) => {
+    const nextValue = selectedValue[0] ?? templateColumns.value[0]?.value ?? "acl4ssr-mihomo";
+    selectedTemplateValue.value = [nextValue];
+    form.templateId = nextValue;
+    showTemplatePicker.value = false;
+  };
 
 let scrollTop = 0;
 const isInit = ref(false);
@@ -1377,6 +1419,19 @@ const urlValidator = (val: string): Promise<boolean> => {
     Dialog({
         title: '组合订阅与单条订阅',
         content: '组合订阅中将包含\n\n1. 含有关联订阅标签的单条订阅\n\n2. 手动选择的单条订阅\n\n举例: 设置了关联订阅标签为 "A, B" 后\n包含标签 "A" 或 "B" 的单条订阅将自动关联到此组合订阅',
+        popClass: 'auto-dialog',
+        textAlign: 'left',
+        okText: 'OK',
+        noCancelBtn: true,
+        closeOnPopstate: true,
+        lockScroll: false,
+      });
+  };
+  const templateTips = () => {
+    const template = selectedTemplate.value;
+    Dialog({
+        title: selectedTemplateLabel.value,
+        content: `类型：${template?.readonly ? "内置模板" : "自定义模板"}\n输出：${template?.target || "mihomo"}\n\n模板会在生成组合订阅时写入代理组、规则提供者和分流规则。`,
         popClass: 'auto-dialog',
         textAlign: 'left',
         okText: 'OK',

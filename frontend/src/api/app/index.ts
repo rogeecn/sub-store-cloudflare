@@ -72,7 +72,8 @@ const normalizeUiProcess = (process: unknown): JsonMap[] => {
 };
 
 const toActionMeta = (process: unknown): UiProcess[] => {
-  return normalizeUiProcess(process)
+  return (Array.isArray(process) ? process : [])
+    .filter((item): item is JsonMap => Boolean(item) && typeof item === 'object')
     .filter((item) => SOURCE_ACTION_TYPES.has(item.type))
     .map((item) => cloneJson({
       id: item.id || newUiId(),
@@ -428,6 +429,13 @@ export function useCloudflareApi() {
       return request({
         url: '/api/templates',
         method: 'post',
+        data,
+      }).then(response => adaptResponseData(response, fromApiTemplate));
+    },
+    updateTemplate: (name: string, data: any): AxiosPromise<MyAxiosRes> => {
+      return request({
+        url: `/api/templates/${encodeURIComponent(name)}`,
+        method: 'patch',
         data,
       }).then(response => adaptResponseData(response, fromApiTemplate));
     },
