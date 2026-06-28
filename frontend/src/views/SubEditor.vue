@@ -285,43 +285,6 @@
             />
           </nut-form-item>
 
-          <nut-form-item
-            :label="$t(`editorPage.subConfig.basic.proxy.label`)"
-            prop="proxy"
-          >
-            <nut-input
-              :border="false"
-              class="nut-input-text"
-              v-model.trim="form.proxy"
-              :placeholder="$t(`editorPage.subConfig.basic.proxy.placeholder`)"
-              type="text"
-              input-align="right"
-              left-icon="tips"
-              @click-left-icon="proxyTips"
-            />
-          </nut-form-item>
-
-          <nut-form-item
-            :label="$t(`editorPage.subConfig.basic.source.mergeSources`)"
-            prop="mergeSources"
-          >
-            <div class="radio-wrapper">
-              <nut-radiogroup
-                direction="horizontal"
-                v-model="form.mergeSources"
-              >
-                <nut-radio shape="button" label="">
-                  {{ $t(`editorPage.subConfig.basic.source.noMerge`) }}
-                </nut-radio>
-                <nut-radio shape="button" label="localFirst">
-                  {{ $t(`editorPage.subConfig.basic.source.localFirst`) }}
-                </nut-radio>
-                <nut-radio shape="button" label="remoteFirst">
-                  {{ $t(`editorPage.subConfig.basic.source.remoteFirst`) }}
-                </nut-radio>
-              </nut-radiogroup>
-            </div>
-          </nut-form-item>
         </template>
 
         <template v-else-if="editType === 'collections'">
@@ -458,56 +421,7 @@
                 @click-left-icon="subUserinfoTips"
               />
             </nut-form-item>
-            <nut-form-item
-              prop="firstSubFlow"
-              class="ignore-failed-wrapper"
-            >
-              <template #label>
-                <span class="label-with-tip" @click="firstSubFlowTips">
-                  <span>{{ $t(`editorPage.subConfig.basic.firstSubFlow.label`) }}</span>
-                  <nut-icon name="tips"></nut-icon>
-                </span>
-              </template>
-              <div class="switch-wrapper">
-                <nut-switch v-model="form.firstSubFlow" />
-              </div>
-            </nut-form-item>
-            <nut-form-item
-              :label="$t(`editorPage.subConfig.basic.proxy.label`)"
-              prop="proxy"
-            >
-              <nut-input
-                :border="false"
-                class="nut-input-text"
-                v-model.trim="form.proxy"
-                :placeholder="$t(`editorPage.subConfig.basic.proxy.placeholder`)"
-                type="text"
-                input-align="right"
-                left-icon="tips"
-                @click-left-icon="proxyTips"
-            />
-          </nut-form-item>
         </template>
-
-        <nut-form-item prop="age-public-key">
-          <template #label>
-            <span class="label-with-tip" @click="ageOutputTips">
-              <span>{{ $t("ageKey.publicKey.label") }}</span>
-              <nut-icon name="tips"></nut-icon>
-            </span>
-          </template>
-          <div class="age-key-field">
-            <nut-input
-              :border="false"
-              class="nut-input-text"
-              v-model.trim="form['age-public-key']"
-              :placeholder="$t('ageKey.publicKey.placeholder')"
-              type="text"
-              input-align="right"
-            />
-            <AgeKeyHelper v-model="form['age-public-key']" />
-          </div>
-        </nut-form-item>
 
         <nut-form-item
           :label="$t(`editorPage.subConfig.basic.ignoreFailedRemoteSub.label`)"
@@ -634,7 +548,6 @@ import Regex from "@/views/editor/components/Regex.vue";
 import Sort from "@/views/editor/components/Sort.vue";
 import IconPopup from "@/views/icon/IconPopup.vue";
 import TagPopup from "@/components/TagPopup.vue";
-import AgeKeyHelper from "@/components/AgeKeyHelper.vue";
 import DesktopPicker from "@/components/DesktopPicker.vue";
 import EditorGroupingTips from "@/components/EditorGroupingTips.vue";
 import { Dialog, Toast } from "@nutui/nutui";
@@ -710,11 +623,7 @@ const SUB_EDITOR_PROP_TO_TAB: Partial<Record<string, SubEditorTab>> = {
   passThroughUA: "content",
   ua: "content",
   subUserinfo: "content",
-  proxy: "content",
-  mergeSources: "content",
   subscriptionTags: "content",
-  firstSubFlow: "content",
-  "age-public-key": "content",
   ignoreFailedRemoteSub: "content",
 };
 const availableEditorTabs = computed(() => [...SUB_EDITOR_TABS]);
@@ -892,16 +801,6 @@ const selectedSubsDisplay = computed(() => selectedSubs.value.replace(/^:\s*/, "
         label: t(`${prefix}.quiet`),
         note: t(`${prefix}.quietNote`),
       },
-      {
-        value: "fallbackNotify",
-        label: t(`${prefix}.fallbackNotify`),
-        note: t(`${prefix}.fallbackNotifyNote`),
-      },
-      {
-        value: "fallbackQuiet",
-        label: t(`${prefix}.fallbackQuiet`),
-        note: t(`${prefix}.fallbackQuietNote`),
-      },
     ];
   });
   const formatFailureModePickerText = (label: string, note?: string) => {
@@ -956,7 +855,6 @@ const form = reactive<any>({
   displayName: "",
   form: "",
   remark: "",
-  mergeSources: "",
   ignoreFailedRemoteSub: false,
   passThroughUA: false,
   icon: "",
@@ -980,7 +878,6 @@ watchEffect(() => {
     switch (editType) {
       case "collections":
         form.subscriptions = [];
-        form.firstSubFlow = true;
         form.templateId = "acl4ssr-mihomo";
         break;
       case "subs":
@@ -1004,7 +901,6 @@ watchEffect(() => {
     sourceData.process = [];
   }
   const newProcess = JSON.parse(JSON.stringify(sourceData.process));
-  form.mergeSources = sourceData.mergeSources;
   let ignoreFailedRemoteSub = sourceData.ignoreFailedRemoteSub;
   if (ignoreFailedRemoteSub === true) {
     ignoreFailedRemoteSub = 'quiet';
@@ -1013,7 +909,6 @@ watchEffect(() => {
   }
   form.ignoreFailedRemoteSub = ignoreFailedRemoteSub;
   form.passThroughUA = sourceData.passThroughUA;
-  form["age-public-key"] = sourceData["age-public-key"] || "";
   form.name = sourceData.name;
   form.displayName = sourceData.displayName || sourceData["display-name"];
   form.remark = sourceData.remark;
@@ -1021,7 +916,6 @@ watchEffect(() => {
   form.isIconColor = sourceData.isIconColor !== false;
   form.process = newProcess;
   form.subUserinfo = sourceData.subUserinfo;
-  form.proxy = sourceData.proxy;
   form.tag = Array.isArray(sourceData.tag)
     ? sourceData.tag.join(", ")
     : sourceData.tag;
@@ -1035,8 +929,6 @@ watchEffect(() => {
         ? [...sourceData.subscriptions]
         : [];
       form.templateId = sourceData.templateId || "acl4ssr-mihomo";
-      form.firstSubFlow = sourceData.firstSubFlow !== false;
-      console.log('form.subscriptions ==>', form.subscriptions);
       break;
     case "subs":
       form.source = sourceData.source;
@@ -1151,8 +1043,26 @@ const fileChange = async (event) => {
   try {
     const reader = new FileReader();
     reader.readAsText(file);
-    reader.onload = () => {
-      cmStore.setEditCode("SubEditer", String(reader.result));
+    reader.onload = async () => {
+      const content = String(reader.result || "");
+      cmStore.setEditCode("SubEditer", content);
+      try {
+        await cloudflareApi.previewItem("sub", {
+          ...toRaw(form),
+          source: "local",
+          content,
+          process: actionsToProcess(form.process, actionsList, ignoreList),
+        });
+        showNotify({
+          type: "success",
+          title: "文件导入成功，节点格式已通过校验",
+        });
+      } catch {
+        showNotify({
+          type: "danger",
+          title: "文件已导入，但未解析到有效节点",
+        });
+      }
     }
 
     reader.onerror = e => {
@@ -1179,11 +1089,10 @@ const fetchCompareData = async () => {
     if (data.ignoreFailedRemoteSub === "disabled") {
       data.ignoreFailedRemoteSub = false;
     }
-    if (editType === "collections") {
-      data.firstSubFlow = data.firstSubFlow !== false;
-    } else {
-      delete data.firstSubFlow;
-    }
+    delete data.firstSubFlow;
+    delete data.proxy;
+    delete data.mergeSources;
+    delete data["age-public-key"];
     data.tag = [
       ...new Set(
         (data.tag || "")
@@ -1317,14 +1226,9 @@ const submit = () => {
     });
     // 如果验证成功，开始保存/修改
     const data: any = JSON.parse(JSON.stringify(toRaw(form)));
-    const agePublicKey = `${data["age-public-key"] || ""}`.trim();
-    if (agePublicKey) {
-      data["age-public-key"] = agePublicKey;
-    } else if (configName === "UNTITLED") {
-      delete data["age-public-key"];
-    } else {
-      data["age-public-key"] = null;
-    }
+    delete data["age-public-key"];
+    delete data.proxy;
+    delete data.mergeSources;
     data.tag = [
       ...new Set(
         (data.tag || "")
@@ -1346,13 +1250,7 @@ const submit = () => {
     if (data.ignoreFailedRemoteSub === "disabled"){
       data.ignoreFailedRemoteSub = false;
     }
-    if (editType === "collections") {
-      data.firstSubFlow = data.firstSubFlow !== false;
-    } else {
-      delete data.firstSubFlow;
-    }
-
-    console.log('submit.....\n', data);
+    delete data.firstSubFlow;
 
     let res = null;
 
@@ -1473,33 +1371,6 @@ const urlValidator = (val: string): Promise<boolean> => {
         lockScroll: false,
       });
   };
-  const firstSubFlowTips = () => {
-    Dialog({
-        title: t(`editorPage.subConfig.basic.firstSubFlow.tips.title`),
-        content: t(`editorPage.subConfig.basic.firstSubFlow.tips.content`),
-        popClass: 'auto-dialog',
-        textAlign: 'left',
-        okText: t(`editorPage.subConfig.basic.firstSubFlow.tips.okText`),
-        noCancelBtn: true,
-        closeOnPopstate: true,
-        lockScroll: false,
-        onOk: () => {
-          window.open("https://t.me/zhetengsha/3070");
-        },
-      });
-  };
-  const proxyTips = () => {
-    Dialog({
-        title: '通过代理/节点/策略获取订阅',
-        content: '1. Surge/Egern(参数 policy/policy-descriptor)\n\n可设置节点代理 例: Test = snell, 1.2.3.4, 80, psk=password, version=4\n\n或设置策略/节点 例: 国外加速\n\n2. Loon(参数 node)\n\nLoon 官方文档: \n\n指定该请求使用哪一个节点或者策略组（可以是节点名称、策略组名称，也可以是一个 Loon 格式的节点描述，如：shadowsocksr,example.com,1070,chacha20-ietf,"password",protocol=auth_aes128_sha1,protocol-param=test,obfs=plain,obfs-param=edge.microsoft.com）\n\n3. Stash(参数 headers["X-Surge-Policy"])/Shadowrocket(参数 headers.X-Surge-Policy)/QX(参数 opts.policy)\n\n可设置策略/节点\n\n4. Node.js 版(http/https/socks5):\n\n例: socks5://a:b@127.0.0.1:7890\n\n※ 优先级由高到低: 单条订阅, 组合订阅, 默认配置\n\n完整说明 请查看 https://t.me/zhetengsha/1843',
-        popClass: 'auto-dialog',
-        textAlign: 'left',
-        okText: 'OK',
-        noCancelBtn: true,
-        closeOnPopstate: true,
-        lockScroll: false,
-      });
-  };
   const subscriptionTagsTips = () => {
     Dialog({
         title: '组合订阅与单条订阅',
@@ -1516,18 +1387,6 @@ const urlValidator = (val: string): Promise<boolean> => {
     Dialog({
         title: t('editorPage.subConfig.basic.url.tips.title'),
         content: t('editorPage.subConfig.basic.url.tips.content'),
-        popClass: 'auto-dialog',
-        textAlign: 'left',
-        okText: 'OK',
-        noCancelBtn: true,
-        closeOnPopstate: true,
-        lockScroll: false,
-      });
-  };
-  const ageOutputTips = () => {
-    Dialog({
-        title: t('ageKey.publicKey.tips.title'),
-        content: t('ageKey.publicKey.tips.content'),
         popClass: 'auto-dialog',
         textAlign: 'left',
         okText: 'OK',
@@ -1735,14 +1594,11 @@ const urlValidator = (val: string): Promise<boolean> => {
   const subCheckboxClick = () => {
     const group = getCurrentVisibleRows().map(([name]) => name);
     if (subCheckboxIndeterminate.value) {
-      console.log(`半选, 应变为全选`)  
       visibleSelectedSubscriptions.value = group;
     } else if (!subCheckbox.value) {
-      console.log(`全选, 应变为不选`)
       visibleSelectedSubscriptions.value = [];
       // subCheckbox.value = !subCheckbox.value
     } else {
-      console.log(`不选, 应变为全选`)
       visibleSelectedSubscriptions.value = group;
       // subCheckbox.value = !subCheckbox.value
     }
@@ -1755,12 +1611,10 @@ const urlValidator = (val: string): Promise<boolean> => {
   };
 
   const onStartDrag = () => {
-    console.log("开始拖拽");
     isDragging.value = true;
   };
 
   const onEndDrag = () => {
-    console.log("结束拖拽");
     const mergedRows = mergeVisibleOrder(
       orderedSubsSelectList.value,
       displayedSubsSelectList.value,

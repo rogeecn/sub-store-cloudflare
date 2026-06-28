@@ -38,10 +38,8 @@ interface Sub {
   icon?: string;
   isIconColor?: boolean;
   ua?: string;
-  mergeSources?: string;
   subUserinfo?: string;
   tag?: string[];
-  'age-public-key'?: string;
   process: Process[];
 }
 
@@ -52,13 +50,10 @@ interface Collection {
   process: Process[];
   subscriptions: string[];
   subscriptionTags?: string[];
-  firstSubFlow?: boolean;
   subUserinfo?: string;
-  proxy?: string;
   icon?: string;
   isIconColor?: boolean;
   tag?: string[];
-  'age-public-key'?: string;
 }
 
 interface Flow {

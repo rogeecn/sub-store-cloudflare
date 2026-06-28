@@ -32,16 +32,13 @@
         </div>
 
         <div class="actions">
-          <a
-            :href="getUrl(platform.path, appearanceSetting.displayPreviewInWebPage)"
-            target="_blank"
-          >
+          <button class="copy-sub-link" @click.stop="targetOpen(platform.path)">
             <svg-icon
               name="view"
               class="action-icon"
               color="var(--comment-text-color)"
             />
-          </a>
+          </button>
           <button class="copy-sub-link" @click.stop="targetCopy(platform.path)">
             <svg-icon
               name="copy"
@@ -160,6 +157,8 @@
   watch(prettyYaml, (value) => {
     setLocalStorageBoolean(PREVIEW_PRETTY_YAML_KEY, value);
   });
+  type PlatformPath = string | null;
+
   const buildUrlWithQuery = (url: string, query: Record<string, string | boolean>): string => {
     if (!url) {
       return '';
@@ -177,7 +176,7 @@
     return `${url}${hasQueryParams ? '&' : '?'}${queryString}`;
   };
 
-  const getUrl = (path: string, preview: boolean = false) => {
+  const getUrl = (path: PlatformPath, preview: boolean = false) => {
     const query = {} as Record<string, string | boolean>;
     if (path !== null) {
       query.target = path;
@@ -206,14 +205,34 @@
       api: host.value,
     });
   }
-  const getRealUrl = async (path: string) => {
+  const getRealUrl = async (path: PlatformPath) => {
     if (url) return getUrl(path);
     const res = await cloudflareApi.getDownloadLink(type, name, path || undefined);
-    return res?.data?.status === 'success' && res.data.data?.url
+    const realUrl = res?.data?.status === 'success' && res.data.data?.url
       ? res.data.data.url
       : getUrl(path);
+
+    const query = {} as Record<string, string | boolean>;
+    if (includeUnsupportedProxy.value) {
+      query.includeUnsupportedProxy = true;
+    }
+    if (prettyYaml.value) {
+      query.prettyYaml = true;
+    }
+    return buildUrlWithQuery(realUrl, query);
   };
-  const targetCopy = async (path: string) => {
+  const targetOpen = async (path: PlatformPath) => {
+    const realUrl = await getRealUrl(path);
+    const nextUrl = appearanceSetting.value.displayPreviewInWebPage
+      ? buildUrlWithQuery('/preview', {
+          url: realUrl,
+          name: displayName || name,
+          api: host.value,
+        })
+      : realUrl;
+    window.open(nextUrl, '_blank');
+  };
+  const targetCopy = async (path: PlatformPath) => {
     const url = await getRealUrl(path);
     if (isSupported) {
       await copy(url);

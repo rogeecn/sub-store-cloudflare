@@ -84,6 +84,16 @@ export async function previewSubscription(options: Pick<BuildOptions, "source" |
   return { original, processed };
 }
 
+export function previewSourceContent(source: SubscriptionSource) {
+  const original = parseProxies(decodeMaybeBase64(source.content || source.url || ""));
+  if (original.length === 0) throw new Error(formatInvalidLocalContentError(source.content || source.url || ""));
+  const processed = ensureUniqueProxyNames(applyFilters(original, getFilters(source)));
+  return {
+    original: addPreviewIds(original),
+    processed: addPreviewIds(processed),
+  };
+}
+
 export function validateSubscriptionContent(raw: string) {
   const proxies = parseProxies(decodeMaybeBase64(raw));
   if (proxies.length === 0) throw new Error(formatInvalidLocalContentError(raw));

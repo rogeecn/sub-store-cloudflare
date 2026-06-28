@@ -234,14 +234,14 @@
         </nut-button>
       </div>
       <div class="sub-item-swipe-btn-wrapper">
-        <a
-          :href="`${host}/api/${props.type}/${encodeURIComponent(name)}?raw=1`"
-          target="_blank"
+        <nut-button
+          shape="square"
+          type="success"
+          class="sub-item-swipe-btn"
+          @click.stop="onClickOpenDownload"
         >
-          <nut-button shape="square" type="success" class="sub-item-swipe-btn">
-            <font-awesome-icon icon="fa-solid fa-file-export" />
-          </nut-button>
-        </a>
+          <font-awesome-icon icon="fa-solid fa-file-export" />
+        </nut-button>
       </div>
       <!-- preview -->
       <!-- <div class="sub-item-swipe-btn-wrapper">
@@ -274,14 +274,14 @@
         </nut-button>
       </div>
       <div class="sub-item-swipe-btn-wrapper">
-        <a
-          :href="`${host}/api/${props.type}/${encodeURIComponent(name)}?raw=1`"
-          target="_blank"
+        <nut-button
+          shape="square"
+          type="success"
+          class="sub-item-swipe-btn"
+          @click.stop="onClickOpenDownload"
         >
-          <nut-button shape="square" type="success" class="sub-item-swipe-btn">
-            <font-awesome-icon icon="fa-solid fa-file-export" />
-          </nut-button>
-        </a>
+          <font-awesome-icon icon="fa-solid fa-file-export" />
+        </nut-button>
       </div>
       <div class="sub-item-swipe-btn-wrapper">
         <nut-button
@@ -466,10 +466,7 @@ const simpleCollectionDetailLine = computed(() => {
 const flow = computed(() => {
   if (props.type === "sub") {
     const urlList = Object.keys(flows.value);
-    const localOnly =
-      props.sub.source === "local" &&
-      !["localFirst", "remoteFirst"].includes(props.sub.mergeSources);
-    if (localOnly && !props.sub.subUserinfo) return t("subPage.subItem.local");
+    if (props.sub.source === "local" && !props.sub.subUserinfo) return t("subPage.subItem.local");
     if (isFlowFetching.value && !urlList.includes(props.sub.url))
       return t("subPage.subItem.loading");
 
@@ -668,7 +665,6 @@ const switchItemMenuVisible = () => {
 };
 
 const openAppUrl = () => {
-  console.log("flow", flow.value);
   if (typeof flow.value === "object" && flow.value?.appUrl) {
     window.open(flow.value.appUrl);
   }
@@ -939,6 +935,17 @@ const onClickCopyLink = async () => {
     await copyFallback(url);
   }
   showNotify({ title: t("subPage.copyNotify.succeed") });
+};
+
+const onClickOpenDownload = async () => {
+  const res = await cloudflareApi.getDownloadLink(props.type, name);
+  const url = res?.data?.status === "success" && res.data.data?.url
+    ? res.data.data.url
+    : `${host.value}/download/${
+      props.type === "collection" ? "collection/" : "source/"
+    }${encodeURIComponent(name)}`;
+  window.open(url, "_blank");
+  closeExpandedMenu();
 };
 
 const onClickRefresh = async () => {

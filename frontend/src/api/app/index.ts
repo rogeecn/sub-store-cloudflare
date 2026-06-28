@@ -280,6 +280,10 @@ const toApiSource = (data: JsonMap) => {
       'process',
       'filters',
       'enabled',
+      'proxy',
+      'mergeSources',
+      'age-public-key',
+      'firstSubFlow',
       'meta',
     ]),
   };
@@ -328,6 +332,10 @@ const toApiCollection = (data: JsonMap) => {
       'ignoreFailed',
       'ignoreFailedRemoteSub',
       'enabled',
+      'proxy',
+      'mergeSources',
+      'age-public-key',
+      'firstSubFlow',
       'meta',
     ]),
   };

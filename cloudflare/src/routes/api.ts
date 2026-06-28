@@ -23,7 +23,7 @@ import {
   upsertSource,
   upsertTemplate,
 } from "../lib/store";
-import { normalizeTarget, previewSubscription, validateSubscriptionContent } from "../lib/subscription";
+import { normalizeTarget, previewSourceContent, previewSubscription } from "../lib/subscription";
 import type {
   CollectionRecord,
   FilterRule,
@@ -175,8 +175,7 @@ apiRoutes.post("/preview/source", async (c) => {
   const input = await c.req.json<JsonMap>();
   try {
     if (input.source === "local" || input.content) {
-      const nodes = validateSubscriptionContent(stringValue(input.content));
-      return success(c, { original: nodes, processed: nodes });
+      return success(c, previewSourceContent(toSubscriptionSource(input)));
     }
     const source = toSubscriptionSource(input);
     return success(c, await previewSubscription({ source, sources: [source], settings: await getSettings(c.env) }));
@@ -398,6 +397,10 @@ function buildDownloadLink(c: ApiContext, kind: "source" | "collection", id: str
   const path = kind === "collection" ? `/download/collection/${encodeURIComponent(id)}/${target}` : `/download/source/${encodeURIComponent(id)}/${target}`;
   const url = new URL(path, getPublicBaseUrl(c));
   if (c.env.SUB_STORE_PUBLIC_DOWNLOAD_TOKEN) url.searchParams.set("token", c.env.SUB_STORE_PUBLIC_DOWNLOAD_TOKEN);
+  for (const key of ["includeUnsupportedProxy", "prettyYaml"]) {
+    const value = c.req.query(key);
+    if (value) url.searchParams.set(key, value);
+  }
   return { url: url.toString(), target, tokenIncluded: Boolean(c.env.SUB_STORE_PUBLIC_DOWNLOAD_TOKEN) };
 }
 
