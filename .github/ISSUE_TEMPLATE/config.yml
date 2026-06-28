@@ -1,8 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Deployment documentation
-    url: https://github.com/realchendahuang/sub-store-cloudflare/blob/main/docs/deployment.md
-    about: Check the deployment guide before opening an install issue.
-  - name: AI Agent install guide
-    url: https://github.com/realchendahuang/sub-store-cloudflare/blob/main/docs/ai-agent-install.md
-    about: Use this guide when deploying with Codex, Claude Code, or another local agent.

@@ -53,8 +53,7 @@
     "check:open-source": "node scripts/check-open-source.mjs",
     "check:history": "node scripts/check-git-history.mjs",
     "release:prepare": "node scripts/prepare-release.mjs",
-    "check:release": "pnpm run check && pnpm run check:agent && pnpm run check:module-format && pnpm run check:worker-contract && pnpm run check:deploy-config && pnpm run check:deploy-config -- wrangler.jsonc && pnpm run check:open-source && pnpm run check:history -- main",
-    "check:release:ci": "pnpm run check && pnpm run check:agent && pnpm run check:module-format && pnpm run check:worker-contract && pnpm run check:deploy-config && pnpm run check:deploy-config -- wrangler.jsonc && pnpm run check:open-source && pnpm run check:history -- HEAD"
+    "check:release": "pnpm run check && pnpm run check:agent && pnpm run check:module-format && pnpm run check:worker-contract && pnpm run check:deploy-config && pnpm run check:deploy-config -- wrangler.jsonc && pnpm run check:open-source && pnpm run check:history -- main"
   },
   "cloudflare": {
     "bindings": {

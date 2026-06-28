@@ -1,6 +1,5 @@
 # Sub-Store Cloudflare
 
-[![CI](https://github.com/realchendahuang/sub-store-cloudflare/actions/workflows/ci.yml/badge.svg)](https://github.com/realchendahuang/sub-store-cloudflare/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/realchendahuang/sub-store-cloudflare?include_prereleases&sort=semver)](https://github.com/realchendahuang/sub-store-cloudflare/releases)
 [![License: AGPL-3.0](https://img.shields.io/github/license/realchendahuang/sub-store-cloudflare)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/realchendahuang/sub-store-cloudflare?style=flat)](https://github.com/realchendahuang/sub-store-cloudflare/stargazers)
