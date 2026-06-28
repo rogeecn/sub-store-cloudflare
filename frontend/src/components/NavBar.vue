@@ -10,8 +10,6 @@
       <nut-navbar
         @on-click-back="back"
         :title="currentTitle"
-        :tit-icon="currentTitleWhetherAsk"
-        @on-click-icon="onClickNavbarIcon"
       >
         <template #left>
           <button
@@ -169,7 +167,6 @@ import { useListViewMode } from "@/hooks/useListViewMode";
 import { useSystemStore } from "@/store/system";
 import { useSettingsStore } from '@/store/settings';
 import { storeToRefs } from "pinia";
-import { Dialog } from "@nutui/nutui";
 import { initStores } from "@/utils/initApp";
 import { useMethodStore } from '@/store/methodStore';
 import { useAppNotifyStore } from "@/store/appNotify";
@@ -225,11 +222,6 @@ const currentTitle = computed(() => {
 
   const metaTitle = route.meta.title;
   return metaTitle ? t(`navBar.pagesTitle.${metaTitle}`) : undefined;
-});
-const currentTitleWhetherAsk = computed(() => {
-  if (isListSearchActive.value) return "";
-
-  return "";
 });
 const showRefreshButton = computed(() => {
   return !isNeedBack.value && !appearanceSetting.value.showFloatingRefreshButton;
@@ -307,23 +299,6 @@ const handleSearchCloseButton = async () => {
 
   closeListSearch();
 };
-const onClickNavbarIcon = () => {
-  const metaTitle = route.meta.title;
-  const content =
-    t(`navBar.pagesTitle.askWhat.${metaTitle}.content`) || "";
-  const title = t(`navBar.pagesTitle.askWhat.${metaTitle}.title`) || "";
-    Dialog({
-      title: title,
-      content: content,
-      popClass: 'auto-dialog',
-      textAlign: 'left',
-      okText: 'OK',
-      noCancelBtn: true,
-      closeOnPopstate: true,
-      lockScroll: false,
-    });
-};
-
 const add = (route: any) => {
   const routePath = route.path;
   const addMethodMap = {

@@ -10,7 +10,7 @@
     "build:frontend": "VITE_API_URL=/ VITE_DISABLE_PWA=true pnpm --dir frontend run build",
     "deploy:config": "node scripts/render-wrangler-config.mjs",
     "check:worker": "pnpm --dir cloudflare run check",
-    "check:frontend": "pnpm run build:frontend",
+    "check:frontend": "pnpm --dir frontend run check:locales && pnpm run build:frontend",
     "check": "pnpm run check:worker && pnpm run check:frontend",
     "deploy:dry-run": "pnpm run check && pnpm --dir cloudflare exec wrangler deploy --dry-run --config wrangler.deploy.local.jsonc",
     "deploy": "pnpm run build:frontend && pnpm --dir cloudflare exec wrangler deploy --config wrangler.deploy.local.jsonc",

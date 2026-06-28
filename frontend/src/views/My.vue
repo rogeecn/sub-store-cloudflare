@@ -10,20 +10,20 @@
         />
         <div class="profile-text">
           <p class="title">{{ appName }}</p>
-          <p class="des">订阅聚合、节点处理和云端规则模板</p>
+          <p class="des">{{ t("myPage.profile.desc") }}</p>
         </div>
       </div>
       <div class="status-grid">
         <div class="status-item">
-          <span>运行环境</span>
+          <span>{{ t("myPage.profile.runtime") }}</span>
           <strong>{{ env.runtime || env.backend || "Cloudflare Workers" }}</strong>
         </div>
         <div class="status-item">
-          <span>存储</span>
+          <span>{{ t("myPage.profile.storage") }}</span>
           <strong>{{ env.storage || "D1" }}</strong>
         </div>
         <div class="status-item">
-          <span>版本</span>
+          <span>{{ t("myPage.profile.version") }}</span>
           <strong>v{{ env.version || "-" }}</strong>
         </div>
       </div>
@@ -31,36 +31,36 @@
 
     <section class="config-card storage-card">
       <div class="title-wrapper">
-        <h1>备份与恢复</h1>
+        <h1>{{ t("myPage.backup.title") }}</h1>
         <div class="storage-actions">
           <input ref="fileInput" type="file" accept="application/json,.json" @change="restoreFromFile" />
           <nut-button plain type="primary" size="small" :loading="restoreIsLoading" @click="selectBackupFile">
             <font-awesome-icon v-if="!restoreIsLoading" icon="fa-solid fa-cloud-arrow-up" />
-            恢复
+            {{ t("myPage.backup.restore") }}
           </nut-button>
           <a :href="backupUrl" target="_blank" rel="noreferrer">
             <nut-button type="primary" size="small">
               <font-awesome-icon icon="fa-solid fa-cloud-arrow-down" />
-              备份
+              {{ t("myPage.backup.export") }}
             </nut-button>
           </a>
         </div>
       </div>
-      <p class="card-desc">导出和恢复订阅源、组合订阅、规则模板与界面设置。</p>
+      <p class="card-desc">{{ t("myPage.backup.desc") }}</p>
     </section>
 
     <section class="config-card">
       <div class="title-wrapper">
-        <h1>规则模板</h1>
+        <h1>{{ t("myPage.templates.title") }}</h1>
         <div class="storage-actions">
           <input ref="templateFileInput" type="file" accept="application/json,.json,.yaml,.yml,text/yaml" @change="importTemplateFromFile" />
           <nut-button plain type="primary" size="small" :loading="templateImporting" @click="selectTemplateFile">
             <font-awesome-icon v-if="!templateImporting" icon="fa-solid fa-file-import" />
-            文件导入
+            {{ t("myPage.templates.importFile") }}
           </nut-button>
           <nut-button type="primary" size="small" :loading="templateImporting" @click="openTemplateImport">
             <font-awesome-icon v-if="!templateImporting" icon="fa-solid fa-plus" />
-            新建
+            {{ t("myPage.templates.create") }}
           </nut-button>
         </div>
       </div>
@@ -68,14 +68,17 @@
         <div v-for="template in templates" :key="template.name" class="template-item">
           <div class="template-text">
             <span class="template-title">{{ template.displayName || template.name }}</span>
-            <span class="template-meta">{{ template.readonly ? "内置模板" : "自定义模板" }} · {{ template.target || "mihomo" }}</span>
+            <span class="template-meta">
+              {{ template.readonly ? t("myPage.templates.builtIn") : t("myPage.templates.custom") }}
+              · {{ getTargetLabel(template.target || "mihomo") }}
+            </span>
           </div>
           <div class="template-actions">
             <nut-button v-if="!template.readonly" plain type="primary" size="mini" @click="openTemplateEdit(template)">
-              编辑
+              {{ t("myPage.btn.edit") }}
             </nut-button>
             <nut-button v-if="!template.readonly" plain type="danger" size="mini" @click="deleteCustomTemplate(template.name)">
-              删除
+              {{ t("myPage.btn.delete") }}
             </nut-button>
           </div>
         </div>
@@ -84,47 +87,47 @@
 
     <section class="config-card">
       <div class="title-wrapper" @click="requestEditing ? cancelRequestEdit() : startRequestEdit()">
-        <h1>请求设置</h1>
+        <h1>{{ t("myPage.request.title") }}</h1>
         <div class="config-btn-wrapper">
           <template v-if="requestEditing">
             <nut-button class="cancel-btn" plain type="info" size="mini" :disabled="requestSaving" @click.stop="cancelRequestEdit">
               <font-awesome-icon icon="fa-solid fa-ban" />
-              取消
+              {{ t("myPage.btn.cancel") }}
             </nut-button>
             <nut-button class="save-btn" type="primary" size="mini" :loading="requestSaving" @click.stop="saveRequestSettings">
               <font-awesome-icon v-if="!requestSaving" icon="fa-solid fa-floppy-disk" />
-              保存
+              {{ t("myPage.btn.save") }}
             </nut-button>
           </template>
           <nut-icon v-else class="right-icon" name="right"></nut-icon>
         </div>
       </div>
       <div v-if="requestEditing" class="config-input-wrapper">
-        <nut-input class="input" v-model="requestForm.defaultUserAgent" placeholder="默认 User-Agent" type="text" input-align="left" />
-        <nut-input class="input" v-model="requestForm.defaultFlowUserAgent" placeholder="流量信息 User-Agent" type="text" input-align="left" />
-        <nut-input class="input" v-model="requestForm.defaultTimeout" placeholder="请求超时，单位毫秒" type="number" input-align="left" />
-        <nut-input class="input" v-model="requestForm.backendRequestConcurrency" placeholder="远程订阅并发数" type="number" input-align="left" />
-        <nut-input class="input" v-model="requestForm.backendRequestConcurrencyWaitTime" placeholder="并发请求间隔，单位毫秒" type="number" input-align="left" />
+        <nut-input class="input" v-model="requestForm.defaultUserAgent" :placeholder="t('myPage.request.defaultUserAgent')" type="text" input-align="left" />
+        <nut-input class="input" v-model="requestForm.defaultFlowUserAgent" :placeholder="t('myPage.request.defaultFlowUserAgent')" type="text" input-align="left" />
+        <nut-input class="input" v-model="requestForm.defaultTimeout" :placeholder="t('myPage.request.defaultTimeout')" type="number" input-align="left" />
+        <nut-input class="input" v-model="requestForm.backendRequestConcurrency" :placeholder="t('myPage.request.backendRequestConcurrency')" type="number" input-align="left" />
+        <nut-input class="input" v-model="requestForm.backendRequestConcurrencyWaitTime" :placeholder="t('myPage.request.backendRequestConcurrencyWaitTime')" type="number" input-align="left" />
       </div>
-      <p v-else class="card-desc">当前远程订阅拉取并发 {{ settingsStore.backendRequestConcurrency || "3" }}，超时 {{ settingsStore.defaultTimeout || "30000" }}ms。</p>
+      <p v-else class="card-desc">{{ requestSummary }}</p>
     </section>
 
     <section class="config-card">
       <div class="title-wrapper">
-        <h1>界面</h1>
+        <h1>{{ t("myPage.appearance.title") }}</h1>
         <LanguageSwitcherButton />
       </div>
       <div class="settings-row">
         <div>
-          <p class="row-title">简洁模式</p>
-          <p class="row-desc">控制订阅列表和编辑器的展示密度。</p>
+          <p class="row-title">{{ t("myPage.appearance.simpleMode") }}</p>
+          <p class="row-desc">{{ t("myPage.appearance.simpleModeDesc") }}</p>
         </div>
         <nut-switch v-model="simpleMode" @change="saveAppearance" />
       </div>
       <div class="settings-row">
         <div>
-          <p class="row-title">宽屏窄栏</p>
-          <p class="row-desc">桌面宽屏下使用移动端式导航。</p>
+          <p class="row-title">{{ t("myPage.appearance.wideScreenNarrowMode") }}</p>
+          <p class="row-desc">{{ t("myPage.appearance.wideScreenNarrowModeDesc") }}</p>
         </div>
         <nut-switch v-model="wideScreenNarrowMode" @change="saveAppearance" />
       </div>
@@ -132,11 +135,11 @@
 
     <nut-popup v-model:visible="templateImportVisible" position="bottom" round closeable :style="{ height: '82vh' }">
       <div class="template-import-panel">
-        <h2>{{ templateEditingId ? "编辑规则模板" : "导入规则模板" }}</h2>
-        <nut-input class="input" v-model.trim="templateForm.id" placeholder="模板 ID，例如 custom-mihomo" input-align="left" :disabled="Boolean(templateEditingId)" />
-        <nut-input class="input" v-model.trim="templateForm.name" placeholder="显示名称，例如 Custom Mihomo" input-align="left" />
+        <h2>{{ templateEditingId ? t("myPage.templates.editTitle") : t("myPage.templates.importTitle") }}</h2>
+        <nut-input class="input" v-model.trim="templateForm.id" :placeholder="t('myPage.templates.idPlaceholder')" input-align="left" :disabled="Boolean(templateEditingId)" />
+        <nut-input class="input" v-model.trim="templateForm.name" :placeholder="t('myPage.templates.namePlaceholder')" input-align="left" />
         <nut-cell class="template-target-trigger" @click="openTemplateTargetPicker">
-          <view class="nut-cell__title">输出格式</view>
+          <view class="nut-cell__title">{{ t("myPage.templates.target") }}</view>
           <view class="nut-cell__value">
             <nut-input
               :model-value="templateTargetLabel"
@@ -152,7 +155,7 @@
           <cmView :is-read-only="false" id="TemplateEditor" />
         </div>
         <nut-button block type="primary" :loading="templateImporting" @click="saveTemplate">
-          保存模板
+          {{ t("myPage.templates.save") }}
         </nut-button>
       </div>
     </nut-popup>
@@ -160,9 +163,9 @@
       v-model="selectedTemplateTargetValue"
       v-model:visible="templateTargetPickerVisible"
       :columns="templateTargetColumns"
-      title="选择输出格式"
-      cancel-text="取消"
-      ok-text="确定"
+      :title="t('myPage.templates.targetPickerTitle')"
+      :cancel-text="t('myPage.btn.cancel')"
+      :ok-text="t('specificWord.confirm')"
       @confirm="handleTemplateTargetConfirm"
     />
   </div>
@@ -172,6 +175,7 @@
 import { storeToRefs } from "pinia";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { Dialog } from "@nutui/nutui";
+import { useI18n } from "vue-i18n";
 
 import { useCloudflareApi } from "@/api/app";
 import LanguageSwitcherButton from "@/components/LanguageSwitcherButton.vue";
@@ -189,6 +193,7 @@ const settingsApi = useSettingsApi();
 const cloudflareApi = useCloudflareApi();
 const cmStore = useCodeStore();
 const { showNotify } = useAppNotifyStore();
+const { t } = useI18n();
 const { appearanceSetting } = storeToRefs(settingsStore);
 const { icon, env } = useBackend();
 const TEMPLATE_EDITOR_ID = "TemplateEditor";
@@ -232,6 +237,12 @@ const appName = computed(() => {
   return env.value?.app
     || env.value?.meta?.cloudflare?.env?.SUB_STORE_BACKEND_CUSTOM_NAME
     || "Sub-Store Cloudflare";
+});
+const requestSummary = computed(() => {
+  return t("myPage.request.summary", {
+    concurrency: settingsStore.backendRequestConcurrency || "3",
+    timeout: settingsStore.defaultTimeout || "30000",
+  });
 });
 
 const backupUrl = computed(() => {
@@ -349,7 +360,7 @@ const handleTemplateTargetConfirm = ({ selectedValue }) => {
 const saveTemplate = async () => {
   const content = String(cmStore.EditCode[TEMPLATE_EDITOR_ID] || "");
   if (!templateForm.id || !content.trim()) {
-    showNotify({ type: "danger", title: "模板 ID 和内容不能为空" });
+    showNotify({ type: "danger", title: t("myPage.templates.validationRequired") });
     return;
   }
 
@@ -368,9 +379,9 @@ const saveTemplate = async () => {
     await fetchTemplates();
     templateImportVisible.value = false;
     templateEditingId.value = "";
-    showNotify({ type: "success", title: "模板已保存" });
+    showNotify({ type: "success", title: t("myPage.templates.saveSucceed") });
   } catch (error) {
-    showNotify({ type: "danger", title: `模板保存失败\n${error instanceof Error ? error.message : String(error)}` });
+    showNotify({ type: "danger", title: t("myPage.templates.saveFailed", { e: errorMessage(error) }) });
   } finally {
     templateImporting.value = false;
   }
@@ -378,17 +389,17 @@ const saveTemplate = async () => {
 
 const deleteCustomTemplate = (name: string) => {
   Dialog({
-    title: "删除模板",
-    content: `确认删除模板 ${name}？`,
+    title: t("myPage.templates.deleteTitle"),
+    content: t("myPage.templates.deleteContent", { name }),
     popClass: "auto-dialog",
-    okText: "删除",
-    cancelText: "取消",
+    okText: t("myPage.btn.delete"),
+    cancelText: t("myPage.btn.cancel"),
     closeOnClickOverlay: true,
     onOk: async () => {
       const res = await cloudflareApi.deleteTemplate(name);
       if (res?.data?.status === "success") {
         await fetchTemplates();
-        showNotify({ type: "success", title: "模板已删除" });
+        showNotify({ type: "success", title: t("myPage.templates.deleteSucceed") });
       }
     },
   });
@@ -401,11 +412,11 @@ const restoreFromFile = async (event: Event) => {
   if (!file) return;
 
   Dialog({
-    title: "恢复备份",
-    content: "恢复会覆盖同名订阅源、组合订阅、规则模板和设置。建议先导出当前备份。",
+    title: t("myPage.backup.restoreTitle"),
+    content: t("myPage.backup.restoreContent"),
     popClass: "auto-dialog",
-    okText: "恢复",
-    cancelText: "取消",
+    okText: t("myPage.backup.restore"),
+    cancelText: t("myPage.btn.cancel"),
     closeOnClickOverlay: true,
     onOk: async () => {
       restoreIsLoading.value = true;
@@ -414,15 +425,17 @@ const restoreFromFile = async (event: Event) => {
         const res = await settingsApi.restoreSettings({ content });
         if (res?.data?.status !== "success") throw new Error("restore failed");
         await settingsStore.fetchSettings();
-        showNotify({ type: "success", title: "恢复成功" });
+        showNotify({ type: "success", title: t("myPage.notify.restore.succeed") });
       } catch (error) {
-        showNotify({ type: "danger", title: `恢复失败\n${error instanceof Error ? error.message : String(error)}` });
+        showNotify({ type: "danger", title: t("myPage.notify.restore.failedWithError", { e: errorMessage(error) }) });
       } finally {
         restoreIsLoading.value = false;
       }
     },
   });
 };
+
+const errorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
 
 onMounted(fetchTemplates);
 </script>

@@ -428,7 +428,7 @@ const changeSort = async (
     if (sortDataRes?.data?.status !== "success") {
       sortFailed.value = true;
       showNotify({
-        title: t("notify.sortsub.failed"),
+        title: t("subPage.sort.failed"),
         type: "danger",
         content: JSON.stringify(sortDataRes),
       });
