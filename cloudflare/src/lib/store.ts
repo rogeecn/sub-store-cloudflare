@@ -585,7 +585,7 @@ function normalizeTemplateInput(input: unknown): Partial<TemplateRecord> | undef
     id,
     name: stringValue(template.name, id),
     target: normalizeTargetValue(template.target),
-    config: parseConfig(template.config),
+    config: parseConfig(template.config || {}),
   };
 }
 

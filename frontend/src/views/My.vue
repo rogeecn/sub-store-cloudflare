@@ -50,6 +50,34 @@
     </section>
 
     <section class="config-card">
+      <div class="title-wrapper">
+        <h1>规则模板</h1>
+        <div class="storage-actions">
+          <input ref="templateFileInput" type="file" accept="application/json,.json,.yaml,.yml,text/yaml" @change="importTemplateFromFile" />
+          <nut-button plain type="primary" size="small" :loading="templateImporting" @click="selectTemplateFile">
+            <font-awesome-icon v-if="!templateImporting" icon="fa-solid fa-file-import" />
+            文件导入
+          </nut-button>
+          <nut-button type="primary" size="small" :loading="templateImporting" @click="openTemplateImport">
+            <font-awesome-icon v-if="!templateImporting" icon="fa-solid fa-plus" />
+            新建
+          </nut-button>
+        </div>
+      </div>
+      <div class="template-list">
+        <div v-for="template in templates" :key="template.name" class="template-item">
+          <div class="template-text">
+            <span class="template-title">{{ template.displayName || template.name }}</span>
+            <span class="template-meta">{{ template.readonly ? "内置模板" : "自定义模板" }} · {{ template.target || "mihomo" }}</span>
+          </div>
+          <nut-button v-if="!template.readonly" plain type="danger" size="mini" @click="deleteCustomTemplate(template.name)">
+            删除
+          </nut-button>
+        </div>
+      </div>
+    </section>
+
+    <section class="config-card">
       <div class="title-wrapper" @click="requestEditing ? cancelRequestEdit() : startRequestEdit()">
         <h1>请求设置</h1>
         <div class="config-btn-wrapper">
@@ -96,14 +124,34 @@
         <nut-switch v-model="wideScreenNarrowMode" @change="saveAppearance" />
       </div>
     </section>
+
+    <nut-popup v-model:visible="templateImportVisible" position="bottom" round closeable :style="{ height: '82vh' }">
+      <div class="template-import-panel">
+        <h2>导入规则模板</h2>
+        <nut-input class="input" v-model.trim="templateForm.id" placeholder="模板 ID，例如 custom-mihomo" input-align="left" />
+        <nut-input class="input" v-model.trim="templateForm.name" placeholder="显示名称，例如 Custom Mihomo" input-align="left" />
+        <select v-model="templateForm.target" class="template-target-select">
+          <option value="mihomo">mihomo</option>
+          <option value="sing-box">sing-box</option>
+          <option value="v2ray">v2ray</option>
+          <option value="uri">uri</option>
+          <option value="json">json</option>
+        </select>
+        <textarea v-model="templateForm.content" class="template-content" spellcheck="false" placeholder="粘贴 Mihomo 模板 JSON 或 YAML" />
+        <nut-button block type="primary" :loading="templateImporting" @click="saveTemplate">
+          保存模板
+        </nut-button>
+      </div>
+    </nut-popup>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { storeToRefs } from "pinia";
-import { computed, reactive, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { Dialog } from "@nutui/nutui";
 
+import { useCloudflareApi } from "@/api/app";
 import LanguageSwitcherButton from "@/components/LanguageSwitcherButton.vue";
 import { useSettingsApi } from "@/api/settings";
 import { useBackend } from "@/hooks/useBackend";
@@ -112,14 +160,19 @@ import { useSettingsStore } from "@/store/settings";
 
 const settingsStore = useSettingsStore();
 const settingsApi = useSettingsApi();
+const cloudflareApi = useCloudflareApi();
 const { showNotify } = useAppNotifyStore();
 const { appearanceSetting } = storeToRefs(settingsStore);
 const { icon, env } = useBackend();
 
 const fileInput = ref<HTMLInputElement | null>(null);
+const templateFileInput = ref<HTMLInputElement | null>(null);
 const restoreIsLoading = ref(false);
 const requestEditing = ref(false);
 const requestSaving = ref(false);
+const templateImporting = ref(false);
+const templateImportVisible = ref(false);
+const templates = ref<any[]>([]);
 const simpleMode = ref(Boolean(appearanceSetting.value.isSimpleMode));
 const wideScreenNarrowMode = ref(Boolean(appearanceSetting.value.useNarrowModeOnWideScreen));
 
@@ -129,6 +182,12 @@ const requestForm = reactive({
   defaultTimeout: "",
   backendRequestConcurrency: "",
   backendRequestConcurrencyWaitTime: "",
+});
+const templateForm = reactive({
+  id: "",
+  name: "",
+  target: "mihomo",
+  content: "",
 });
 
 const appName = computed(() => {
@@ -195,6 +254,81 @@ const selectBackupFile = () => {
   fileInput.value?.click();
 };
 
+const fetchTemplates = async () => {
+  const res = await cloudflareApi.getTemplates();
+  if (res?.data?.status === "success" && Array.isArray(res.data.data)) {
+    templates.value = res.data.data;
+  }
+};
+
+const selectTemplateFile = () => {
+  templateFileInput.value?.click();
+};
+
+const openTemplateImport = () => {
+  templateForm.id = "";
+  templateForm.name = "";
+  templateForm.target = "mihomo";
+  templateForm.content = "";
+  templateImportVisible.value = true;
+};
+
+const importTemplateFromFile = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  target.value = "";
+  if (!file) return;
+
+  templateForm.id = file.name.replace(/\.(json|ya?ml)$/i, "").toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+  templateForm.name = file.name.replace(/\.(json|ya?ml)$/i, "");
+  templateForm.target = "mihomo";
+  templateForm.content = await file.text();
+  templateImportVisible.value = true;
+};
+
+const saveTemplate = async () => {
+  if (!templateForm.id || !templateForm.content.trim()) {
+    showNotify({ type: "danger", title: "模板 ID 和内容不能为空" });
+    return;
+  }
+
+  templateImporting.value = true;
+  try {
+    const res = await cloudflareApi.createTemplate({
+      id: templateForm.id,
+      name: templateForm.name || templateForm.id,
+      target: templateForm.target,
+      content: templateForm.content,
+    });
+    if (res?.data?.status !== "success") throw new Error("import failed");
+    await fetchTemplates();
+    templateImportVisible.value = false;
+    showNotify({ type: "success", title: "模板已保存" });
+  } catch (error) {
+    showNotify({ type: "danger", title: `模板保存失败\n${error instanceof Error ? error.message : String(error)}` });
+  } finally {
+    templateImporting.value = false;
+  }
+};
+
+const deleteCustomTemplate = (name: string) => {
+  Dialog({
+    title: "删除模板",
+    content: `确认删除模板 ${name}？`,
+    popClass: "auto-dialog",
+    okText: "删除",
+    cancelText: "取消",
+    closeOnClickOverlay: true,
+    onOk: async () => {
+      const res = await cloudflareApi.deleteTemplate(name);
+      if (res?.data?.status === "success") {
+        await fetchTemplates();
+        showNotify({ type: "success", title: "模板已删除" });
+      }
+    },
+  });
+};
+
 const restoreFromFile = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
@@ -224,6 +358,8 @@ const restoreFromFile = async (event: Event) => {
     },
   });
 };
+
+onMounted(fetchTemplates);
 </script>
 
 <style lang="scss" scoped>
@@ -341,6 +477,87 @@ const restoreFromFile = async (event: Event) => {
   font-size: 12px;
   line-height: 1.6;
   color: var(--comment-text-color);
+}
+
+.template-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.template-item {
+  min-height: 54px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--divider-color);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.template-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.template-title,
+.template-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-title {
+  font-size: 14px;
+  color: var(--primary-text-color);
+}
+
+.template-meta {
+  font-size: 12px;
+  color: var(--comment-text-color);
+}
+
+.template-import-panel {
+  height: 100%;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--second-text-color);
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: 17px;
+    color: var(--primary-text-color);
+  }
+}
+
+.template-target-select {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-bottom: 1px solid var(--divider-color);
+  background: transparent;
+  color: var(--second-text-color);
+}
+
+.template-content {
+  flex: 1;
+  min-height: 220px;
+  resize: none;
+  border: 1px solid var(--divider-color);
+  border-radius: var(--item-card-radios);
+  padding: 10px;
+  background: var(--background-color);
+  color: var(--second-text-color);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .config-input-wrapper {

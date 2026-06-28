@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { parse as parseYaml } from "yaml";
 import { failed, requireAdmin, success } from "../lib/http";
+import { BUILTIN_TEMPLATE_IDS } from "../lib/defaults";
 import {
   deleteCollection,
   deleteSource,
@@ -140,9 +141,13 @@ apiRoutes.delete("/collections/:name", async (c) => success(c, await deleteColle
 
 apiRoutes.get("/templates", async (c) => success(c, (await getAppConfig(c.env)).templates.map(toApiTemplate)));
 apiRoutes.post("/templates", async (c) => {
-  const input = await parseJsonOrText(c) as JsonMap;
-  if (!stringValue(input.name || input.id)) return failed(c, "Template name is required");
-  return success(c, toApiTemplate(await upsertTemplate(c.env, fromApiTemplate(input))));
+  try {
+    const input = await parseJsonOrText(c) as JsonMap;
+    if (!stringValue(input.name || input.id)) return failed(c, "Template name is required");
+    return success(c, toApiTemplate(await upsertTemplate(c.env, fromApiTemplate(input))));
+  } catch (error) {
+    return failed(c, error instanceof Error ? error.message : String(error), 400);
+  }
 });
 apiRoutes.get("/templates/:name", async (c) => {
   const template = await getTemplate(c.env, c.req.param("name"));
@@ -150,9 +155,13 @@ apiRoutes.get("/templates/:name", async (c) => {
   return success(c, toApiTemplate(template));
 });
 apiRoutes.patch("/templates/:name", async (c) => {
-  const existing = await getTemplate(c.env, c.req.param("name"));
-  if (!existing) return failed(c, "Template not found", 404);
-  return success(c, toApiTemplate(await upsertTemplate(c.env, { ...fromApiTemplate(await parseJsonOrText(c) as JsonMap), id: existing.id })));
+  try {
+    const existing = await getTemplate(c.env, c.req.param("name"));
+    if (!existing) return failed(c, "Template not found", 404);
+    return success(c, toApiTemplate(await upsertTemplate(c.env, { ...fromApiTemplate(await parseJsonOrText(c) as JsonMap), id: existing.id })));
+  } catch (error) {
+    return failed(c, error instanceof Error ? error.message : String(error), 400);
+  }
 });
 apiRoutes.delete("/templates/:name", async (c) => {
   try {
@@ -343,7 +352,7 @@ function toApiTemplate(template: TemplateRecord) {
     name: template.name,
     target: template.target,
     config: template.config,
-    readonly: template.id === "mihomo-basic" || template.id === "acl4ssr-mihomo",
+    readonly: BUILTIN_TEMPLATE_IDS.has(template.id),
   };
 }
 
@@ -429,13 +438,14 @@ async function parseJsonOrText(c: ApiContext) {
 
 function parseTemplateConfig(input: unknown) {
   if (input && typeof input === "object" && !Array.isArray(input)) return input as JsonMap;
-  if (typeof input !== "string" || !input.trim()) return {};
+  if (typeof input !== "string" || !input.trim()) throw new Error("Template config is required");
   try {
     const parsed = input.trim().startsWith("{") ? JSON.parse(input) : parseYaml(input);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as JsonMap : {};
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as JsonMap;
   } catch {
-    return {};
+    throw new Error("Template config must be valid JSON or YAML");
   }
+  throw new Error("Template config must be an object");
 }
 
 type FlowRequest = {

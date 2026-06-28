@@ -387,6 +387,19 @@ export function useCloudflareApi() {
         method: 'get',
       }).then(response => adaptResponseData(response, data => Array.isArray(data) ? data.map(fromApiTemplate) : data));
     },
+    createTemplate: (data: any): AxiosPromise<MyAxiosRes> => {
+      return request({
+        url: '/api/templates',
+        method: 'post',
+        data,
+      }).then(response => adaptResponseData(response, fromApiTemplate));
+    },
+    deleteTemplate: (name: string): AxiosPromise<MyAxiosRes> => {
+      return request({
+        url: `/api/templates/${encodeURIComponent(name)}`,
+        method: 'delete',
+      });
+    },
     getOne: (type: string, name: string): AxiosPromise<MyAxiosRes> => {
       const apiListType = toApiListType(type);
       return request({
