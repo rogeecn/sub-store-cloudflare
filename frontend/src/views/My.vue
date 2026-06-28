@@ -182,6 +182,7 @@ import { useAppNotifyStore } from "@/store/appNotify";
 import { useCodeStore } from "@/store/codeStore";
 import { useSettingsStore } from "@/store/settings";
 import cmView from "@/views/editCode/cmView.vue";
+import { TEMPLATE_TARGET_OPTIONS, getTargetLabel } from "@/constants/subscriptionTargets";
 
 const settingsStore = useSettingsStore();
 const settingsApi = useSettingsApi();
@@ -218,19 +219,14 @@ const templateForm = reactive({
   target: "mihomo",
 });
 const selectedTemplateTargetValue = ref<string[]>([]);
-const templateTargetOptions = [
-  { value: "mihomo", label: "Mihomo" },
-  { value: "stash", label: "Stash" },
-  { value: "surge-mac", label: "Surge Mac" },
-];
 const templateTargetColumns = computed(() => {
-  return templateTargetOptions.map((option) => ({
+  return TEMPLATE_TARGET_OPTIONS.map((option) => ({
     text: option.label,
     value: option.value,
   }));
 });
 const templateTargetLabel = computed(() => {
-  return templateTargetOptions.find((option) => option.value === templateForm.target)?.label || templateForm.target || "Mihomo";
+  return getTargetLabel(templateForm.target);
 });
 const appName = computed(() => {
   return env.value?.app

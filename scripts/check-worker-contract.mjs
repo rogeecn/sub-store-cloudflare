@@ -62,9 +62,9 @@ function assertTargetCoverage() {
       matcher: (target) => new RegExp(`["']${escapeRegExp(target)}["']`).test(readFileSync("scripts/validate-agent-setup.mjs", "utf8")),
     },
     {
-      file: "frontend/src/components/PreviewPanel.vue",
+      file: "frontend/src/constants/subscriptionTargets.ts",
       label: "preview platform list",
-      matcher: (target) => new RegExp(`path:\\s*["']${escapeRegExp(target)}["']`).test(readFileSync("frontend/src/components/PreviewPanel.vue", "utf8")),
+      matcher: (target) => new RegExp(`value:\\s*["']${escapeRegExp(target)}["']`).test(readFileSync("frontend/src/constants/subscriptionTargets.ts", "utf8")),
     },
   ];
 

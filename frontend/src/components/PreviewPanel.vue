@@ -35,19 +35,6 @@
 </template>
 
 <script lang="ts" setup>
-  import json from '@/assets/icons/json.svg';
-  import uri from '@/assets/icons/uri.svg';
-  import v2ray from '@/assets/icons/v2ray.png';
-  import singbox from '@/assets/icons/sing-box.png';
-  import clashmeta from '@/assets/icons/clashmeta.png';
-  import stash from '@/assets/icons/stash.png';
-  import surge from '@/assets/icons/surge.png';
-  import surgeMac from '@/assets/icons/surgeformac_icon.png';
-  import loon from '@/assets/icons/loon.png';
-  import quanx from '@/assets/icons/quanx.png';
-  import shadowrocket from '@/assets/icons/shadowrocket.png';
-  import surfboard from '@/assets/icons/surfboard.png';
-  import egern from '@/assets/icons/egern.png';
   import logoIcon from '@/assets/icons/logo.png';
   import { useClipboard } from '@vueuse/core';
   import useV3Clipboard from 'vue-clipboard3';
@@ -57,6 +44,7 @@
   import { storeToRefs } from "pinia";
   import { useSettingsStore } from '@/store/settings';
   import { useCloudflareApi } from '@/api/app';
+  import { DOWNLOAD_TARGET_OPTIONS } from '@/constants/subscriptionTargets';
 
   const settingsStore = useSettingsStore();
   const { appearanceSetting } = storeToRefs(settingsStore);
@@ -161,71 +149,11 @@
       path: 'mihomo',
       icon: logoIcon,
     },
-    {
-      name: 'Mihomo',
-      path: 'mihomo',
-      icon: clashmeta,
-    },
-    {
-      name: 'Stash',
-      path: 'stash',
-      icon: stash,
-    },
-    {
-      name: 'Surge',
-      path: 'surge',
-      icon: surge,
-    },
-    {
-      name: 'Surge Mac',
-      path: 'surge-mac',
-      icon: surgeMac,
-    },
-    {
-      name: 'Loon',
-      path: 'loon',
-      icon: loon,
-    },
-    {
-      name: 'Quantumult X',
-      path: 'qx',
-      icon: quanx,
-    },
-    {
-      name: 'Shadowrocket',
-      path: 'shadowrocket',
-      icon: shadowrocket,
-    },
-    {
-      name: 'Surfboard',
-      path: 'surfboard',
-      icon: surfboard,
-    },
-    {
-      name: 'Egern',
-      path: 'egern',
-      icon: egern,
-    },
-    {
-      name: 'sing-box',
-      path: 'sing-box',
-      icon: singbox,
-    },
-    {
-      name: 'V2Ray',
-      path: 'v2ray',
-      icon: v2ray,
-    },
-    {
-      name: 'URI',
-      path: 'uri',
-      icon: uri,
-    },
-    {
-      name: 'JSON',
-      path: 'json',
-      icon: json,
-    },
+    ...DOWNLOAD_TARGET_OPTIONS.map((target) => ({
+      name: target.label,
+      path: target.value,
+      icon: target.icon,
+    })),
   ];
   const tips = () => {
     window.open('https://github.com/realchendahuang/sub-store-cloudflare#%E9%85%8D%E7%BD%AE%E6%A8%A1%E5%9E%8B');
