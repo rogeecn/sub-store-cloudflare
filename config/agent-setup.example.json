@@ -7,16 +7,6 @@
     "downloadHostname": "",
     "downloadTargets": ["mihomo", "stash", "surge", "surge-mac", "surfboard", "loon", "egern", "shadowrocket", "qx", "sing-box", "v2ray", "uri", "json"]
   },
-  "access": {
-    "enabled": false,
-    "scope": "account",
-    "accountId": "00000000000000000000000000000000",
-    "zoneId": "",
-    "adminHostname": "substore.example.com",
-    "allowedEmails": ["you@example.com"],
-    "allowedEmailDomains": [],
-    "sessionDuration": "24h"
-  },
   "sources": [
     {
       "id": "airport-a",

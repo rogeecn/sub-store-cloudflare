@@ -2,7 +2,6 @@ import { createI18n } from "vue-i18n";
 
 import en from "./en";
 import { getInitialLocale } from "./languages";
-import ru from "./ru";
 import zh from "./zh";
 
 const i18n = createI18n({
@@ -10,7 +9,6 @@ const i18n = createI18n({
   messages: {
     zh,
     en,
-    ru,
   },
 });
 

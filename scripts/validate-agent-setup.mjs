@@ -30,7 +30,6 @@ const sourceIds = new Set();
 const templateIds = new Set(BUILTIN_TEMPLATE_IDS);
 
 validateDeployment(config.deployment);
-validateAccess(config.access);
 
 for (const source of sources) {
   const id = idValue(source.id || source.name);
@@ -109,35 +108,6 @@ function validateDeployment(deployment) {
     if (!SUPPORTED_TARGETS.has(String(target))) {
       errors.push(`deployment.downloadTargets contains unsupported target: ${target}`);
     }
-  }
-}
-
-function validateAccess(access) {
-  if (access === undefined) return;
-  if (!object(access)) {
-    errors.push("access must be an object");
-    return;
-  }
-
-  if (access.enabled !== true) return;
-  const scope = stringValue(access.scope) || "account";
-  if (!["account", "zone"].includes(scope)) errors.push("access.scope must be account or zone");
-  if (scope === "account" && !stringValue(access.accountId)) errors.push("access.accountId is required when access.enabled is true");
-  if (scope === "zone" && !stringValue(access.zoneId)) errors.push("access.zoneId is required when access.scope is zone");
-  if (!stringValue(access.adminHostname)) errors.push("access.adminHostname is required when access.enabled is true");
-
-  const emailRules = array(access.allowedEmails);
-  const domainRules = array(access.allowedEmailDomains);
-  if (emailRules.length === 0 && domainRules.length === 0) {
-    errors.push("access.allowedEmails or access.allowedEmailDomains is required when access.enabled is true");
-  }
-
-  for (const email of emailRules) {
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email))) errors.push(`access.allowedEmails contains invalid email: ${email}`);
-  }
-  for (const domain of domainRules) {
-    const value = String(domain);
-    if (!value || value.includes("@") || /\s/.test(value)) errors.push(`access.allowedEmailDomains contains invalid domain: ${domain}`);
   }
 }
 

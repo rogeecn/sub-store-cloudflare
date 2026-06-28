@@ -35,7 +35,6 @@ export default {
       cellTitle: "轻点语言以切换",
       zh: "简体中文",
       en: "English",
-      ru: "Русский",
       language: "语言"
     },
     actions: {
@@ -70,8 +69,8 @@ export default {
       label: "导入",
       succeed: "导入成功",
       failed: "导入失败\n{e}",
-      tipsTitle: "导入 Sub-Store 订阅数据",
-      tipsContent: "订阅管理页面, 在某个订阅左滑/右滑的更多项中, 点击导出图标按钮"
+      tipsTitle: "导入订阅配置",
+      tipsContent: "可导入单条订阅或组合订阅的 JSON 配置。完整配置迁移请使用「我的」页面的备份恢复。"
     },
     addSubTitle: "选择要创建的订阅类型",
     previewTitle: "预览/拷贝订阅",
@@ -82,16 +81,16 @@ export default {
     },
     emptySub: {
       title: "你还没有添加订阅",
-      desc: "添加后开始使用 Sub-Store",
+      desc: "添加远程订阅或本地节点后开始聚合",
       btn: "立即添加"
     },
     loadFailed: {
       title: "数据加载失败",
-      desc: "请检查代理工具的 MITM、Rewrite 等配置",
+      desc: "请检查管理 token、Worker API 和网络连接",
       btn: "重试",
-      doc: "查看 Sub-Store 教程",
-      followOfficialChannel: "或关注 Sub-Store 官方频道并进群提问",
-      about: "查看项目 & 教程"
+      doc: "查看部署文档",
+      followOfficialChannel: "查看项目文档后再排查部署状态",
+      about: "查看项目文档"
     },
     collectionItem: {
       noSub: "没有包含子订阅",
@@ -107,7 +106,7 @@ export default {
       refresh: "刷新流量信息",
       edit: "编辑",
       moreActions: "打开更多操作",
-      cloneConfig: "克隆配置",
+      cloneConfig: "克隆",
       openDownload: "打开下载链接",
       delete: "删除",
       openTarget: "打开 {name} 订阅",
@@ -155,9 +154,9 @@ export default {
       tips: {
         ok: "查看文档",
         cancel: "取消",
-        desc: "部分功能需使用参数 请查看文档",
+        desc: "下载链接可选择输出格式，也支持临时 url/content/ua 参数",
         title: "订阅链接参数",
-        content: "https://github.com/sub-store-org/Sub-Store/wiki/%E9%93%BE%E6%8E%A5%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E"
+        content: "https://github.com/realchendahuang/sub-store-cloudflare#%E9%83%A8%E7%BD%B2"
       }
     },
     sort: {
@@ -168,15 +167,15 @@ export default {
     groupingTips: {
       open: "详情页分组说明",
       title: "详情页分组",
-      content: "若不喜欢分组功能可在 我的/更多设置/详情页使用分组 中修改",
-      goSettings: "去修改",
+      content: "详情页按显示、内容和操作分组，便于只维护订阅源、组合关系、节点处理和规则模板。",
+      goSettings: "确定",
       cancel: "取消"
     },
     commonTips: {
       open: "详情页常用配置说明",
       title: "详情页常用配置",
-      content: "可在 我的/更多设置/详情页常用配置 中调整展示方式",
-      goSettings: "去修改",
+      content: "常用配置会生成一组节点处理动作，用于过滤无效节点并批量设置 UDP、TFO、跳过证书验证等常见字段。",
+      goSettings: "确定",
       cancel: "取消"
     },
     subConfig: {
@@ -360,8 +359,8 @@ export default {
           label: "透传单条订阅流量信息",
           tips: {
             title: "透传单条订阅流量信息",
-            content: "默认透传第一个单条订阅流量信息。\n\n若需要合并组合订阅中所有单条订阅的流量，可使用脚本 https://t.me/zhetengsha/3070",
-            okText: "查看"
+            content: "组合订阅默认透传第一个单条订阅的流量信息。若需要展示聚合后的流量，请在对应订阅源里手动填写 subscription-userinfo，或使用独立 flowUrl 查询。",
+            okText: "确定"
           }
         },
         passThroughUA: {
@@ -732,8 +731,8 @@ export default {
     nodeNames: {
       entry: "全部节点名",
       title: "{side}全部节点名",
-      descriptionBefore: "可复制全部节点名，也可复制提示词让 AI 帮你整理通用命名规则，再按结果配置正则重命名。参考：",
-      aiLink: "节点命名参考",
+      descriptionBefore: "可复制全部节点名，也可复制提示词让 AI 帮你整理通用命名规则，再按结果配置正则重命名。",
+      aiLink: "建议先保留地区、倍率、协议和入口编号，再用正则重命名统一格式。",
       copyAll: "复制全部节点名",
       copyPrompt: "复制提示词",
       copyAllSucceed: "节点名已复制",

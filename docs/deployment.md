@@ -187,18 +187,6 @@ pnpm run seed:local
 
 这条链路不需要浏览器操作。AI Agent 应该通过 `config/agent-setup.local.json`、`pnpm run seed:validate`、`pnpm run seed:render` 和 `pnpm run seed:remote` 完成初始配置导入。
 
-如果要配置 Cloudflare Access，先写入 `config/agent-setup.local.json` 的 `access` 字段，再运行：
-
-```bash
-pnpm run access:render
-```
-
-确认生成的 `cloudflare/access.setup.local.json` 后再运行：
-
-```bash
-CLOUDFLARE_API_TOKEN=... pnpm run access:apply
-```
-
 ## 10. 发布前检查
 
 ```bash

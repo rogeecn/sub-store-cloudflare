@@ -130,34 +130,6 @@ Ask only for missing inputs. Prefer reasonable defaults when the user does not c
    - sources/collections summary.
    - `git status --short` privacy check summary.
 
-## Cloudflare Access
-
-Cloudflare Access is optional. The default product already has:
-
-- `SUB_STORE_ADMIN_TOKEN` for the admin UI and `/api/*`.
-- `SUB_STORE_PUBLIC_DOWNLOAD_TOKEN` for `/download/*`.
-
-If the user asks for Access:
-
-- Do not use browser automation as the primary method.
-- Prefer `pnpm run access:render`, Cloudflare API, Terraform, or explicit instructions.
-- Ask for:
-  - Cloudflare account id.
-  - protected hostname, usually the admin hostname only.
-  - allowed emails or email domains.
-  - API token with Zero Trust Access application/policy permissions.
-- Create a self-hosted Access application for the admin hostname.
-- Use an allow policy with email or email domain rules.
-- Keep `/download/*` outside Access unless the user confirms their subscription client can handle Access authentication. Most subscription clients cannot.
-- Render the payload with `pnpm run access:render`.
-- Apply only after reviewing the generated `cloudflare/access.setup.local.json`:
-  - `CLOUDFLARE_API_TOKEN=... pnpm run access:apply`
-
-Cloudflare API references:
-
-- Create Access application: `POST /{accounts_or_zones}/{account_or_zone_id}/access/apps`
-- Create reusable Access policy: `POST /accounts/{account_id}/access/policies`
-
 ## Template Guidance
 
 - `acl4ssr-mihomo`: recommended default for most users.

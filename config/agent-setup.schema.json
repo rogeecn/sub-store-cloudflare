@@ -20,28 +20,6 @@
         }
       }
     },
-    "access": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "enabled": { "type": "boolean" },
-        "scope": { "enum": ["account", "zone"] },
-        "accountId": { "type": "string" },
-        "zoneId": { "type": "string" },
-        "adminHostname": { "type": "string" },
-        "allowedEmails": {
-          "type": "array",
-          "items": { "type": "string" },
-          "uniqueItems": true
-        },
-        "allowedEmailDomains": {
-          "type": "array",
-          "items": { "type": "string" },
-          "uniqueItems": true
-        },
-        "sessionDuration": { "type": "string" }
-      }
-    },
     "sources": {
       "type": "array",
       "items": { "$ref": "#/$defs/source" }

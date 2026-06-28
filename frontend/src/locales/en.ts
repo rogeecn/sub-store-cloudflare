@@ -35,7 +35,6 @@ export default {
       cellTitle: "Tap a language to switch",
       zh: "简体中文",
       en: "English",
-      ru: "Русский",
       language: "Language"
     },
     actions: {
@@ -70,8 +69,8 @@ export default {
       label: "Import",
       succeed: "Successfully imported!",
       failed: "Failed to import!\n{e}",
-      tipsTitle: "Import Subscription data",
-      tipsContent: "On the Subscription management page, click on the Export icon button on the left/right slide of a subscription with more items."
+      tipsTitle: "Import subscription config",
+      tipsContent: "Import a JSON config for one source or collection. Use backup restore on the Settings page for full config migration."
     },
     addSubTitle: "Choose Subscription type",
     previewTitle: "Copy/Preview a subscription",
@@ -82,16 +81,16 @@ export default {
     },
     emptySub: {
       title: "You have no Subscription yet",
-      desc: "After adding you can enjoy the love of YM Peng",
+      desc: "Add a remote subscription or local node text to start aggregating.",
       btn: "Create Subscription Now"
     },
     loadFailed: {
       title: "Load data failed",
-      desc: "Please check MITM, Rewrite and others in Proxy Tool",
+      desc: "Check the admin token, Worker API, and network connection.",
       btn: "Retry",
-      doc: "Visit Sub-Store Docs",
-      followOfficialChannel: "You can also follow Sub-Store official channel and join the group to ask questions",
-      about: "Check the project & tutorial"
+      doc: "Open deployment docs",
+      followOfficialChannel: "Check the project docs before debugging the deployment.",
+      about: "Open project docs"
     },
     collectionItem: {
       noSub: "No subscription included",
@@ -107,7 +106,7 @@ export default {
       refresh: "Refresh usage info",
       edit: "Edit",
       moreActions: "Open more actions",
-      cloneConfig: "Clone config",
+      cloneConfig: "Clone",
       openDownload: "Open download link",
       delete: "Delete",
       openTarget: "Open {name} subscription",
@@ -155,9 +154,9 @@ export default {
       tips: {
         ok: "View Document",
         cancel: "Cancel",
-        desc: "Some functions require parameters. Please check the document.",
+        desc: "Download links can choose an output target and support temporary url/content/ua parameters.",
         title: "Subscription Link Parameters",
-        content: "https://github.com/sub-store-org/Sub-Store/wiki/%E9%93%BE%E6%8E%A5%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E"
+        content: "https://github.com/realchendahuang/sub-store-cloudflare#deployment"
       }
     },
     sort: {
@@ -168,15 +167,15 @@ export default {
     groupingTips: {
       open: "Detail page grouping tips",
       title: "Detail page grouping",
-      content: "If you do not like grouping, change it in My / More settings / Use grouping on detail pages.",
-      goSettings: "Go to settings",
+      content: "The editor is grouped into display, content, and actions so the source, collection, node processing, and routing template stay easy to maintain.",
+      goSettings: "OK",
       cancel: "Cancel"
     },
     commonTips: {
       open: "Detail page common settings tips",
       title: "Detail page common settings",
-      content: "You can adjust the display mode in My / More settings / Detail page common settings.",
-      goSettings: "Go to settings",
+      content: "Common settings generate node actions for invalid-node cleanup and batch options such as UDP, TFO, and skip TLS verification.",
+      goSettings: "OK",
       cancel: "Cancel"
     },
     subConfig: {
@@ -360,8 +359,8 @@ export default {
           label: "Pass Through Single Subscription Traffic Info",
           tips: {
             title: "Pass Through Single Subscription Traffic Info",
-            content: "By default, the first single subscription traffic info is passed through.\n\nTo merge traffic info from all single subscriptions in the collection, use the script at https://t.me/zhetengsha/3070",
-            okText: "View"
+            content: "A collection passes through usage info from the first source by default. To show aggregate usage, fill subscription-userinfo manually on the related source or use a dedicated flowUrl.",
+            okText: "OK"
           }
         },
         passThroughUA: {
@@ -732,8 +731,8 @@ export default {
     nodeNames: {
       entry: "All names",
       title: "{side} all node names",
-      descriptionBefore: "Copy all node names, or copy a prompt that asks AI to summarize reusable naming rules. Apply the result with regex rename rules. Reference: ",
-      aiLink: "Node naming reference",
+      descriptionBefore: "Copy all node names, or copy a prompt that asks AI to summarize reusable naming rules. Apply the result with regex rename rules.",
+      aiLink: "Keep region, multiplier, protocol, and entry number first, then normalize with regex rename rules.",
       copyAll: "Copy all names",
       copyPrompt: "Copy prompt",
       copyAllSucceed: "Node names copied",

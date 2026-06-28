@@ -97,43 +97,14 @@ pnpm run seed:remote
 - `loyalsoldier-blacklist`：代理优先的黑名单思路。
 - `ai-streaming-mihomo`：AI、流媒体、Telegram、GitHub 分流更明确。
 
-## Cloudflare Access
+## 访问保护
 
-这个项目本身已经有两层 token：
+这个项目默认使用两层 token：
 
 - `SUB_STORE_ADMIN_TOKEN`：保护管理界面和 `/api/*`。
 - `SUB_STORE_PUBLIC_DOWNLOAD_TOKEN`：保护 `/download/*`。
 
-如果你还想把管理域名放到 Cloudflare Access 后面，可以让 Agent 帮你做，但它应该优先用 Cloudflare API、Terraform 或清晰的命令步骤，不应该靠浏览器点后台。
-
-更简单的默认方案是：
-
-- 管理界面使用 `?token=<admin-token>`。
-- 下载链接使用 `?token=<download-token>`。
-- 如果使用单独下载域名，把它写到 `SUB_STORE_PUBLIC_DOWNLOAD_HOSTS`，该域名只开放 `/download/*`。
-
-通常不要把 `/download/*` 放到 Cloudflare Access 后面，因为 Clash、Mihomo、sing-box 等订阅客户端一般不能完成 Access 登录。
-
-如果确实要配置 Access，Agent 至少需要：
-
-- Cloudflare account id。
-- 管理域名。
-- 允许登录的邮箱或邮箱域名。
-- 有 Zero Trust Access application/policy 权限的 API token。
-
-配置写进 `config/agent-setup.local.json` 的 `access` 字段后，先渲染 payload：
-
-```bash
-pnpm run access:render
-```
-
-确认 `cloudflare/access.setup.local.json` 后再应用：
-
-```bash
-CLOUDFLARE_API_TOKEN=... pnpm run access:apply
-```
-
-具体说明见 [cloudflare-access.md](cloudflare-access.md)。
+管理界面使用 `?token=<admin-token>`，下载链接使用 `?token=<download-token>`。如果使用单独下载域名，把它写到 `SUB_STORE_PUBLIC_DOWNLOAD_HOSTS`，该域名只开放 `/download/*`。
 
 ## 验证清单
 

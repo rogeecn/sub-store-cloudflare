@@ -24,7 +24,6 @@ Follow AGENTS.md and agent/SKILL.md in this repository. Deploy this Sub-Store Cl
 - Use D1 for sources, collections, templates, and filters.
 - Do not add R2/KV/Queues/Durable Objects unless the codebase is changed for that storage model.
 - Do not use browser automation for Cloudflare setup unless the user explicitly asks for a visual walkthrough.
-- Keep `/download/*` outside Cloudflare Access unless the user confirms their subscription client can authenticate through Access.
 
 ## Execution Checklist
 
@@ -41,17 +40,3 @@ Follow AGENTS.md and agent/SKILL.md in this repository. Deploy this Sub-Store Cl
 11. `pnpm run deploy`
 12. `pnpm run seed:remote`
 13. Verify `/api/env`, `/api/templates`, `/api/sources`, `/api/collections`, `/api/link/collection/<id>`, and `/download/collection/<id>/mihomo`.
-
-## Cloudflare Access
-
-If Access is requested, set `access.enabled` in `config/agent-setup.local.json`, then run:
-
-```bash
-pnpm run access:render
-```
-
-Review `cloudflare/access.setup.local.json`. Apply only after user approval:
-
-```bash
-CLOUDFLARE_API_TOKEN=... pnpm run access:apply
-```

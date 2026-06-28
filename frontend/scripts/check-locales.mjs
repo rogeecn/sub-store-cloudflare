@@ -6,7 +6,6 @@ import { pathToFileURL } from "node:url";
 const localeFiles = {
   zh: "src/locales/zh.ts",
   en: "src/locales/en.ts",
-  ru: "src/locales/ru.ts",
 };
 
 const loadLocale = async (filePath) => {

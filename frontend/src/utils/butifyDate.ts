@@ -1,6 +1,5 @@
 import "dayjs/locale/zh";
 import "dayjs/locale/en";
-import "dayjs/locale/ru";
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -18,7 +17,6 @@ export const butifyDate = (date: number): string => {
 
   if (diff >= 0 && diff <= 60 * 1000) {
     if (locale === "zh") return "刚刚";
-    if (locale === "ru") return "только что";
     return "just now";
   }
 

@@ -13,12 +13,6 @@ export const SUPPORTED_LOCALES = [
     dayjsLocale: "en",
     datePickerLocale: "en-US",
   },
-  {
-    key: "ru",
-    labelKey: "navBar.langSwitcher.ru",
-    dayjsLocale: "ru",
-    datePickerLocale: "ru-RU",
-  },
 ] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]["key"];

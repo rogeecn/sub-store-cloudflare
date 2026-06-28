@@ -3,7 +3,7 @@
 把下面这段发给 Codex、Claude Code 或其他本地 AI 编程 Agent：
 
 ```text
-Follow AGENTS.md and agent/SKILL.md in this repository. Deploy this Sub-Store Cloudflare project to my Cloudflare account. Ask me only for missing inputs. Write my setup to config/agent-setup.local.json, use config/rule-presets.json for templates and filters, validate with pnpm run seed:validate, deploy the Cloudflare Worker with D1, import my sources and collections, optionally configure Cloudflare Access for the admin hostname only, and return the final admin URL plus download URLs.
+Follow AGENTS.md and agent/SKILL.md in this repository. Deploy this Sub-Store Cloudflare project to my Cloudflare account. Ask me only for missing inputs. Write my setup to config/agent-setup.local.json, use config/rule-presets.json for templates and filters, validate with pnpm run seed:validate, deploy the Cloudflare Worker with D1, import my sources and collections, and return the final admin URL plus download URLs.
 ```
 
 如果你还没有整理订阅源，可以直接继续告诉 Agent：

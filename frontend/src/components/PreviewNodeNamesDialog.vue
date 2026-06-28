@@ -11,14 +11,7 @@
     <div class="preview-node-names-content">
       <p class="preview-node-names-desc">
         {{ t('comparePage.nodeNames.descriptionBefore') }}
-        <a
-          href="https://t.me/zhetengsha/5277"
-          target="_blank"
-          rel="noopener noreferrer"
-          @click.stop
-        >
-          {{ t('comparePage.nodeNames.aiLink') }}
-        </a>
+        {{ t('comparePage.nodeNames.aiLink') }}
       </p>
       <textarea
         class="preview-node-names-textarea"
