@@ -38,7 +38,7 @@
 <script setup>
 import { darkCode } from "./dark.js";
 import { lightCode } from "./light.js";
-import { javascript } from "@/views/editCode/lang-js";
+import { javascript } from "@codemirror/lang-javascript";
 import { ref, onMounted, watch, watchEffect } from "vue";
 
 import {
@@ -47,7 +47,7 @@ import {
   openSearchPanel,
   gotoLine,
   closeSearchPanel,
-} from "@/views/editCode/search";
+} from "@codemirror/search";
 import {
   lineNumbers,
   EditorView,
@@ -65,7 +65,7 @@ import {
 } from "@codemirror/commands";
 import { closeBrackets, autocompletion } from "@codemirror/autocomplete";
 import { Compartment, EditorState } from "@codemirror/state";
-import { hyperLink } from "@/views/editCode/link";
+import { hyperLink } from "@uiw/codemirror-extensions-hyper-link";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import useV3Clipboard from "vue-clipboard3";
 import copyimg from "@/views/editCode/svg/copy.svg";

@@ -1,18 +1,20 @@
 import vue from "@vitejs/plugin-vue";
-import * as path from "path";
-import fs from "fs";
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { ConfigEnv, defineConfig, loadEnv } from "vite";
 import { createStyleImportPlugin } from "vite-plugin-style-import";
 import { createSvgIconsPlugin } from "vite-plugin-svg-icons";
 import viteCompression from "vite-plugin-compression";
 import { VitePWA } from "vite-plugin-pwa";
 
+const projectRoot = dirname(fileURLToPath(import.meta.url));
 const version = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "package.json"), "utf-8")
+  readFileSync(join(projectRoot, "package.json"), "utf-8")
 ).version.trim();
 
 const alias: Record<string, string> = {
-  "@": path.resolve(__dirname, "src"),
+  "@": resolve(projectRoot, "src"),
   vue: "vue/dist/vue.esm-bundler.js",
 };
 
@@ -26,7 +28,7 @@ const htmlPlugin = () => {
 };
 
 const viteConfig = defineConfig((mode: ConfigEnv) => {
-  const env = loadEnv(mode.mode, process.cwd());
+  const env = loadEnv(mode.mode, projectRoot);
   const enablePWA = env.VITE_DISABLE_PWA !== "true";
 
   return {
@@ -50,7 +52,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
         ],
       }),
       createSvgIconsPlugin({
-        iconDirs: [path.resolve(process.cwd(), "src/assets/icons")],
+        iconDirs: [resolve(projectRoot, "src/assets/icons")],
         symbolId: "icon-[dir]-[name]",
         customDomId: "__svg__icons__dom__",
       }),
@@ -148,7 +150,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
         selfDestroying: false,
       }),
     ],
-    root: process.cwd(),
+    root: projectRoot,
     resolve: { alias },
     base: mode.command === "serve" ? "./" : env.VITE_PUBLIC_PATH,
     hmr: true,

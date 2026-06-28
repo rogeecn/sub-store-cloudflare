@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import process from "node:process";
-import vm from "node:vm";
+import { pathToFileURL } from "node:url";
 
 const localeFiles = {
   zh: "src/locales/zh.ts",
@@ -8,17 +8,12 @@ const localeFiles = {
   ru: "src/locales/ru.ts",
 };
 
-const loadLocale = (filePath) => {
-  const code = fs
-    .readFileSync(filePath, "utf8")
-    .replace(/^export default/, "module.exports =");
-  const sandbox = {
-    module: { exports: {} },
-    exports: {},
-  };
-
-  vm.runInNewContext(code, sandbox, { filename: filePath });
-  return sandbox.module.exports;
+const loadLocale = async (filePath) => {
+  const code = fs.readFileSync(filePath, "utf8");
+  const sourceUrl = pathToFileURL(filePath).href;
+  const dataUrl = `data:text/javascript;base64,${Buffer.from(`${code}\n//# sourceURL=${sourceUrl}`).toString("base64")}`;
+  const localeModule = await import(dataUrl);
+  return localeModule.default;
 };
 
 const flatten = (value, prefix = "", result = new Map()) => {
@@ -48,10 +43,12 @@ const getPlaceholders = (value) => {
 const formatList = (items) => items.map((item) => `  - ${item}`).join("\n");
 
 const locales = Object.fromEntries(
-  Object.entries(localeFiles).map(([locale, filePath]) => [
-    locale,
-    flatten(loadLocale(filePath)),
-  ]),
+  await Promise.all(
+    Object.entries(localeFiles).map(async ([locale, filePath]) => [
+      locale,
+      flatten(await loadLocale(filePath)),
+    ]),
+  ),
 );
 
 let hasError = false;
