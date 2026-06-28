@@ -135,19 +135,24 @@
         <h2>{{ templateEditingId ? "编辑规则模板" : "导入规则模板" }}</h2>
         <nut-input class="input" v-model.trim="templateForm.id" placeholder="模板 ID，例如 custom-mihomo" input-align="left" :disabled="Boolean(templateEditingId)" />
         <nut-input class="input" v-model.trim="templateForm.name" placeholder="显示名称，例如 Custom Mihomo" input-align="left" />
-        <select v-model="templateForm.target" class="template-target-select">
-          <option value="mihomo">mihomo</option>
-          <option value="sing-box">sing-box</option>
-          <option value="v2ray">v2ray</option>
-          <option value="uri">uri</option>
-          <option value="json">json</option>
-        </select>
-        <textarea v-model="templateForm.content" class="template-content" spellcheck="false" placeholder="粘贴 Mihomo 模板 JSON 或 YAML" />
+        <nut-cell class="template-target-trigger" title="输出格式" :desc="templateTargetLabel" is-link @click="openTemplateTargetPicker" />
+        <div class="template-content-editor">
+          <cmView :is-read-only="false" id="TemplateEditor" />
+        </div>
         <nut-button block type="primary" :loading="templateImporting" @click="saveTemplate">
           保存模板
         </nut-button>
       </div>
     </nut-popup>
+    <DesktopPicker
+      v-model="selectedTemplateTarget"
+      v-model:visible="showTemplateTargetPicker"
+      :columns="templateTargetColumns"
+      title="输出格式"
+      cancel-text="取消"
+      ok-text="确定"
+      @confirm="handleTemplateTargetConfirm"
+    />
   </div>
 </template>
 
@@ -157,18 +162,23 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 import { Dialog } from "@nutui/nutui";
 
 import { useCloudflareApi } from "@/api/app";
+import DesktopPicker from "@/components/DesktopPicker.vue";
 import LanguageSwitcherButton from "@/components/LanguageSwitcherButton.vue";
 import { useSettingsApi } from "@/api/settings";
 import { useBackend } from "@/hooks/useBackend";
 import { useAppNotifyStore } from "@/store/appNotify";
+import { useCodeStore } from "@/store/codeStore";
 import { useSettingsStore } from "@/store/settings";
+import cmView from "@/views/editCode/cmView.vue";
 
 const settingsStore = useSettingsStore();
 const settingsApi = useSettingsApi();
 const cloudflareApi = useCloudflareApi();
+const cmStore = useCodeStore();
 const { showNotify } = useAppNotifyStore();
 const { appearanceSetting } = storeToRefs(settingsStore);
 const { icon, env } = useBackend();
+const TEMPLATE_EDITOR_ID = "TemplateEditor";
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const templateFileInput = ref<HTMLInputElement | null>(null);
@@ -178,6 +188,8 @@ const requestSaving = ref(false);
 const templateImporting = ref(false);
 const templateImportVisible = ref(false);
 const templateEditingId = ref("");
+const showTemplateTargetPicker = ref(false);
+const selectedTemplateTarget = ref<string[]>(["mihomo"]);
 const templates = ref<any[]>([]);
 const simpleMode = ref(Boolean(appearanceSetting.value.isSimpleMode));
 const wideScreenNarrowMode = ref(Boolean(appearanceSetting.value.useNarrowModeOnWideScreen));
@@ -193,8 +205,15 @@ const templateForm = reactive({
   id: "",
   name: "",
   target: "mihomo",
-  content: "",
 });
+const templateTargetColumns = [
+  { text: "mihomo", value: "mihomo" },
+  { text: "sing-box", value: "sing-box" },
+  { text: "v2ray", value: "v2ray" },
+  { text: "uri", value: "uri" },
+  { text: "json", value: "json" },
+];
+const templateTargetLabel = computed(() => templateForm.target || "mihomo");
 
 const appName = computed(() => {
   return env.value?.app
@@ -276,7 +295,8 @@ const openTemplateImport = () => {
   templateForm.id = "";
   templateForm.name = "";
   templateForm.target = "mihomo";
-  templateForm.content = "";
+  selectedTemplateTarget.value = [templateForm.target];
+  cmStore.setEditCode(TEMPLATE_EDITOR_ID, "");
   templateImportVisible.value = true;
 };
 
@@ -285,8 +305,21 @@ const openTemplateEdit = (template: any) => {
   templateForm.id = template.name;
   templateForm.name = template.displayName || template.name;
   templateForm.target = template.target || "mihomo";
-  templateForm.content = JSON.stringify(template.config || {}, null, 2);
+  selectedTemplateTarget.value = [templateForm.target];
+  cmStore.setEditCode(TEMPLATE_EDITOR_ID, JSON.stringify(template.config || {}, null, 2));
   templateImportVisible.value = true;
+};
+
+const openTemplateTargetPicker = () => {
+  selectedTemplateTarget.value = [templateForm.target || "mihomo"];
+  showTemplateTargetPicker.value = true;
+};
+
+const handleTemplateTargetConfirm = ({ selectedValue }) => {
+  const nextValue = selectedValue[0] || "mihomo";
+  selectedTemplateTarget.value = [nextValue];
+  templateForm.target = nextValue;
+  showTemplateTargetPicker.value = false;
 };
 
 const importTemplateFromFile = async (event: Event) => {
@@ -299,12 +332,14 @@ const importTemplateFromFile = async (event: Event) => {
   templateForm.id = file.name.replace(/\.(json|ya?ml)$/i, "").toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
   templateForm.name = file.name.replace(/\.(json|ya?ml)$/i, "");
   templateForm.target = "mihomo";
-  templateForm.content = await file.text();
+  selectedTemplateTarget.value = [templateForm.target];
+  cmStore.setEditCode(TEMPLATE_EDITOR_ID, await file.text());
   templateImportVisible.value = true;
 };
 
 const saveTemplate = async () => {
-  if (!templateForm.id || !templateForm.content.trim()) {
+  const content = String(cmStore.EditCode[TEMPLATE_EDITOR_ID] || "");
+  if (!templateForm.id || !content.trim()) {
     showNotify({ type: "danger", title: "模板 ID 和内容不能为空" });
     return;
   }
@@ -315,7 +350,7 @@ const saveTemplate = async () => {
       id: templateForm.id,
       name: templateForm.name || templateForm.id,
       target: templateForm.target,
-      content: templateForm.content,
+      content,
     };
     const res = templateEditingId.value
       ? await cloudflareApi.updateTemplate(templateEditingId.value, payload)
@@ -565,27 +600,27 @@ onMounted(fetchTemplates);
   }
 }
 
-.template-target-select {
-  width: 100%;
-  min-height: 42px;
-  border: 0;
-  border-bottom: 1px solid var(--divider-color);
-  background: transparent;
-  color: var(--second-text-color);
+.template-target-trigger {
+  box-shadow: none;
+  border-radius: var(--item-card-radios);
+  background: var(--background-color);
 }
 
-.template-content {
+.template-content-editor {
   flex: 1;
   min-height: 220px;
-  resize: none;
   border: 1px solid var(--divider-color);
   border-radius: var(--item-card-radios);
-  padding: 10px;
   background: var(--background-color);
-  color: var(--second-text-color);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
-  line-height: 1.5;
+  overflow: auto;
+
+  :deep(.cmviewRef) {
+    min-height: 220px;
+  }
+
+  :deep(.cm-editor) {
+    min-height: 220px;
+  }
 }
 
 .config-input-wrapper {
