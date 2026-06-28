@@ -8,6 +8,7 @@ Use this checklist before publishing a release.
 git status --short
 pnpm run release:prepare -- v0.1.0
 pnpm run check:release
+pnpm run check:release:ci
 pnpm run deploy:dry-run
 ```
 

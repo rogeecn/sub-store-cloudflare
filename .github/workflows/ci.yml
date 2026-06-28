@@ -37,7 +37,7 @@ jobs:
         run: pnpm run setup
 
       - name: Run checks
-        run: pnpm run check:release
+        run: pnpm run check:release:ci
 
       - name: Check Deploy to Cloudflare config
         run: pnpm run deploy:dry-run

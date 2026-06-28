@@ -4,6 +4,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 1
+    groups:
+      github-actions:
+        patterns:
+          - "*"
     labels:
       - dependencies
 
@@ -11,6 +16,11 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
+    open-pull-requests-limit: 1
+    groups:
+      frontend-dependencies:
+        patterns:
+          - "*"
     labels:
       - dependencies
 
@@ -18,5 +28,10 @@ updates:
     directory: /cloudflare
     schedule:
       interval: weekly
+    open-pull-requests-limit: 1
+    groups:
+      worker-dependencies:
+        patterns:
+          - "*"
     labels:
       - dependencies
