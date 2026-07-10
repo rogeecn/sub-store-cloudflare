@@ -69,6 +69,7 @@ Ask only for missing inputs. Prefer reasonable defaults when the user does not c
 - Collections:
   - collection ids and names.
   - which sources each collection includes.
+  - `sourceIds: []` means all enabled sources; list ids to pin a collection to specific sources.
 - Rule template:
   - read `config/rule-presets.json`.
   - default to `acl4ssr-mihomo`.
@@ -90,6 +91,7 @@ Ask only for missing inputs. Prefer reasonable defaults when the user does not c
 2. Prepare private setup:
    - Copy `config/agent-setup.example.json` to `config/agent-setup.local.json` if needed.
    - Fill `sources`, `collections`, optional custom `templates`.
+   - Use 1-64 lowercase letters, numbers, underscores, or hyphens for record ids.
    - Prefer `filterPresetIds` from `config/rule-presets.json` for common filters.
    - Validate with `pnpm run seed:validate`.
 3. Deploy with one command:

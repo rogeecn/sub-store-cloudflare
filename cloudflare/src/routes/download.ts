@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { failed, isTokenValid } from "../lib/http";
 import { buildSubscription, getTargetContentType, normalizeTarget, normalizeTargetAlias } from "../lib/subscription";
-import { bootstrapFromEnv, getRoutingTemplate, getSettings, getSource, getSubscriptionCollection, getSubscriptionSources } from "../lib/store";
-import type { SubscriptionCollection, SubscriptionSource, SubStoreEnv, SubscriptionTarget } from "../types";
+import { getRoutingTemplate, getSettings, getSource, getSubscriptionCollection, getSubscriptionSources } from "../lib/store";
+import type { SubscriptionCollection, SubscriptionSource, SubscriptionTarget } from "../types";
 
 export const downloadRoutes = new Hono<{ Bindings: SubStoreEnv }>();
 
@@ -15,7 +15,6 @@ downloadRoutes.get("/download/collection/:name/:target?/:token?", async (c) => {
   const target = getDownloadTarget(c);
   if (!target) return failed(c, "Unsupported target", 400);
 
-  await bootstrapFromEnv(c.env);
   const collection = await getSubscriptionCollection(c.env, c.req.param("name"));
   if (!collection) return failed(c, "Collection not found", 404);
 
@@ -33,7 +32,6 @@ downloadRoutes.get("/download/source/:name/:target?/:token?", async (c) => {
   const target = getDownloadTarget(c);
   if (!target) return failed(c, "Unsupported target", 400);
 
-  await bootstrapFromEnv(c.env);
   const source = await getSource(c.env, c.req.param("name"));
   if (!source || !source.enabled) return failed(c, "Subscription not found", 404);
   const subscriptionSource: SubscriptionSource = {

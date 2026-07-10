@@ -484,26 +484,14 @@ const isIconColor = computed(() => {
 
 const collectionDetail = computed(() => {
   const nameList = props?.collection.subscriptions || [];
-  const subTags = props?.collection.subscriptionTags || [];
-  if (nameList.length === 0 && subTags.length === 0) {
+  if (nameList.length === 0) {
     return t("subPage.collectionItem.noSub");
-  } else {
-    const displayNameList = nameList.map((name) => {
-      const sub = subsStore.getOneSub(name);
-      return sub?.displayName || sub?.["display-name"] || sub?.name || `${name}(🚫)`;
-    });
-    if (nameList.length === 0) {
-      return `${t("subPage.collectionItem.containTag")}: ${subTags.join(", ")}`;
-    }
-    if (subTags.length === 0) {
-      return `${t("subPage.collectionItem.contain")}: ${displayNameList.join(
-        ", ",
-      )}`;
-    }
-    return `${t("subPage.collectionItem.containTag")}: ${subTags.join(
-      ", ",
-    )} | ${t("subPage.collectionItem.contain")}: ${displayNameList.join(", ")}`;
   }
+  const displayNameList = nameList.map((name) => {
+    const sub = subsStore.getOneSub(name);
+    return sub?.displayName || sub?.["display-name"] || sub?.name || `${name}(🚫)`;
+  });
+  return `${t("subPage.collectionItem.contain")}: ${displayNameList.join(", ")}`;
 });
 const appendRemarkToSimpleDetailLine = (value: string) => {
   if (!shouldInlineRemarkInSecondLine.value) {

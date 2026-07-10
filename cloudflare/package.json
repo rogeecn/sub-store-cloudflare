@@ -7,13 +7,14 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "check": "pnpm run types:check && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --config wrangler.deploy.local.jsonc",
     "migrate:local": "wrangler d1 migrations apply sub-store-cloudflare --local --config wrangler.deploy.local.jsonc",
     "migrate:remote": "wrangler d1 migrations apply sub-store-cloudflare --remote --config wrangler.deploy.local.jsonc",
-    "types": "wrangler types"
+    "types": "wrangler types ./src/worker-configuration.d.ts --config wrangler.jsonc --env-interface SubStoreEnv --include-runtime false --strict-vars false",
+    "types:check": "wrangler types ./src/worker-configuration.d.ts --config wrangler.jsonc --env-interface SubStoreEnv --include-runtime false --strict-vars false --check"
   },
   "dependencies": {
     "hono": "^4.12.28",

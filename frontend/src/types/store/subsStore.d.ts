@@ -49,7 +49,6 @@ interface Collection {
   remark?: string;
   process: Process[];
   subscriptions: string[];
-  subscriptionTags?: string[];
   subUserinfo?: string;
   icon?: string;
   isIconColor?: boolean;

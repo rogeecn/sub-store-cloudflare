@@ -1,6 +1,6 @@
 export default {
   specificWord: {
-    singleSub: "Single",
+    singleSub: "Source",
     collectionSub: "Collection",
     unknownType: "Unknown Type",
     unknownSource: "Unknown Source",
@@ -36,8 +36,9 @@ export default {
       language: "Language"
     },
     actions: {
+      back: "Back",
       refresh: "Refresh data",
-      add: "Create subscription"
+      add: "Create"
     },
     listSearch: {
       open: "Search",
@@ -48,13 +49,17 @@ export default {
     pagesTitle: {
       sub: "Subscriptions",
       my: "Settings",
-      subEditor: "Subscription Editor",
+      subEditor: "Edit Subscription",
+      sourceCreate: "Create Source",
+      sourceEdit: "Edit Source",
+      collectionCreate: "Create Collection",
+      collectionEdit: "Edit Collection",
       preview: "Preview",
       notFound: "404 Not Found"
     }
   },
   tabBar: {
-    sub: "Subs",
+    sub: "Subscriptions",
     my: "Settings"
   },
   notFoundPage: {
@@ -83,17 +88,19 @@ export default {
       btn: "Create Subscription Now"
     },
     loadFailed: {
-      title: "Load data failed",
-      desc: "Check the admin token, Worker API, and network connection.",
+      title: "Unable to load data",
+      desc: "If you just deployed the app, enter the admin token first. Otherwise, check the Worker API and network connection.",
       btn: "Retry",
+      tokenLabel: "Admin token",
+      tokenPlaceholder: "Enter SUB_STORE_ADMIN_TOKEN",
+      saveAndRetry: "Save and retry",
       doc: "Open deployment docs",
       followOfficialChannel: "Check the project docs before debugging the deployment.",
       about: "Open project docs"
     },
     collectionItem: {
-      noSub: "No subscription included",
-      contain: "Included subs",
-      containTag: "Included subscription tags"
+      noSub: "All enabled sources",
+      contain: "Included sources"
     },
     actions: {
       openMenu: "Expand quick actions",
@@ -218,10 +225,10 @@ export default {
         previewDisabledResponseOnlyTips: "Modify Response runs only before sending the download response. Instant preview does not execute it.",
         nodeActionsHelp: "Node Actions Help",
         name: {
-          label: "Name",
-          placeholder: "Unique name(do not include / )",
-          isEmpty: "Name cannot be empty",
-          isInvalid: "The name has been used or is invalid"
+          label: "ID",
+          placeholder: "Lowercase letters, numbers, underscores, or hyphens",
+          isEmpty: "ID is required",
+          isInvalid: "ID is already used or does not match the 1–64 character format"
         },
         remark: {
           label: "Remarks",
@@ -246,14 +253,6 @@ export default {
         tag: {
           label: "Tag(s)",
           placeholder: "Click on the right icon, The tag(s) (separated by comma) will be used for grouping."
-        },
-        subscriptionTags: {
-          label: "Subscription Tag(s)",
-          placeholder: "Click on the right icon, Include all subscriptions that contain one of these tag(s) (separated by comma)",
-          tips: {
-            title: "Collections and single subscriptions",
-            content: "A collection includes:\n\n1. Single subscriptions matched by linked subscription tags\n\n2. Manually selected single subscriptions\n\nFor example, if linked tags are \"A, B\", every single subscription tagged with \"A\" or \"B\" will be included automatically."
-          }
         },
         template: {
           label: "Rule Template",
@@ -280,15 +279,16 @@ export default {
             fullScreenEditCancel: "Exit Full Screen Editing",
             label: "Usage",
             title: "Subscription URL(s)",
-            content: "Put one full http(s) remote subscription URL on each line. Multiple lines are fetched and merged.\n\nUsage info parameters:\n\nflowUrl: custom URL for subscription usage info; reads the response body or subscription-userinfo/profile-web-page-url/plan-name response headers\nflowUserAgent: User-Agent for usage info requests\nflowHeaders: request headers for usage info requests, as a URL-encoded one-line JSON string\nnoFlow: skip usage info\nhideExpire: hide expiration time\nshowRemaining: show remaining traffic instead of used traffic\n\nThe remote subscription User-Agent can be set on this page. Timeout and concurrency are configured on the My page.\n\nExample: https://example.com/sub?token=1#flowUrl=https%3A%2F%2Fexample.com%2Fuserinfo&showRemaining"
+            content: "Put one full http(s) remote subscription URL on each line. Multiple lines are fetched and merged.\n\nUsage info parameters:\n\nflowUrl: custom URL for subscription usage info; reads the response body or subscription-userinfo/profile-web-page-url/plan-name response headers\nflowUserAgent: User-Agent for usage info requests\nflowHeaders: request headers for usage info requests, as a URL-encoded one-line JSON string\nnoFlow: skip usage info\nhideExpire: hide expiration time\nshowRemaining: show remaining traffic instead of used traffic\n\nThe remote subscription User-Agent can be set on this page. Timeout and concurrency are configured on the Settings page.\n\nExample: https://example.com/sub?token=1#flowUrl=https%3A%2F%2Fexample.com%2Fuserinfo&showRemaining"
           },
           isEmpty: "URL cannot be empty",
           isIllegal: "Invalid URL"
         },
         subscriptions: {
-          label: "Select included subscriptions",
-          empty: "Please create a subscription first, then use the collection feature",
-          none: "None"
+          label: "Included sources",
+          empty: "Create a source before creating a collection",
+          none: "None",
+          allEnabled: "All enabled sources"
         },
         content: {
           label: "Content",
@@ -319,22 +319,11 @@ export default {
           label: "Custom Icon Use Original Color"
         },
         ignoreFailedRemoteSub: {
-          label: "Sub Failure Handling",
-          disabled: "Strict Errors",
-          disabledDesc: "Fail immediately and show a notification when subscription processing errors occur.",
-          disabledNote: "fail and notify",
-          enabled: "Skip Remote + Notify",
-          enabledDesc: "Skip failed remote subscriptions and show a notification; other errors still fail.",
-          enabledNote: "other errors still fail",
-          quiet: "Skip Remote Silently",
-          quietDesc: "Skip failed remote subscriptions without showing a notification; other errors still fail.",
-          quietNote: "other errors still fail",
-          fallbackNotify: "Empty on Error + Notify",
-          fallbackNotifyDesc: "If subscription processing hits any error, return an empty result and show a notification.",
-          fallbackNotifyNote: "return empty result",
-          fallbackQuiet: "Empty on Error Silently",
-          fallbackQuietDesc: "If subscription processing hits any error, return an empty result without showing a notification.",
-          fallbackQuietNote: "return empty result"
+          label: "Source failure handling",
+          disabled: "Fail the collection",
+          disabledNote: "stop when any source fails",
+          skip: "Skip failed sources",
+          skipNote: "keep the remaining available sources"
         },
         ua: {
           label: "User-Agent",

@@ -11,11 +11,14 @@
       "properties": {
         "workerName": { "type": "string", "minLength": 1 },
         "d1DatabaseName": { "type": "string", "minLength": 1 },
-        "adminHostname": { "type": "string" },
-        "downloadHostname": { "type": "string" },
+        "d1DatabaseId": { "type": "string", "pattern": "^[0-9a-fA-F-]{36}$" },
+        "adminHostname": { "type": "string", "maxLength": 253 },
+        "downloadHostname": { "type": "string", "maxLength": 253 },
+        "adminToken": { "type": "string", "minLength": 16 },
+        "downloadToken": { "type": "string", "minLength": 16 },
         "downloadTargets": {
           "type": "array",
-          "items": { "enum": ["mihomo", "stash", "surge", "surge-mac", "surfboard", "loon", "egern", "shadowrocket", "qx", "sing-box", "v2ray", "uri", "json"] },
+          "items": { "enum": ["mihomo", "stash", "surge", "surfboard", "loon", "egern", "shadowrocket", "qx", "sing-box", "v2ray", "uri", "json"] },
           "uniqueItems": true
         }
       }
@@ -35,6 +38,10 @@
   },
   "required": ["sources", "collections", "templates"],
   "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]{1,64}$"
+    },
     "filter": {
       "type": "object",
       "additionalProperties": true,
@@ -85,7 +92,7 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "id": { "type": "string" },
+        "id": { "$ref": "#/$defs/identifier" },
         "name": { "type": "string" },
         "type": { "enum": ["remote", "local"] },
         "url": { "type": "string" },
@@ -101,19 +108,31 @@
           "items": { "$ref": "#/$defs/filter" }
         },
         "meta": { "type": "object" }
-      }
+      },
+      "required": ["id", "name", "type"],
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "remote" } } },
+          "then": { "required": ["url"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "local" } } },
+          "then": { "required": ["content"] }
+        }
+      ]
     },
     "collection": {
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "id": { "type": "string" },
+        "id": { "$ref": "#/$defs/identifier" },
         "name": { "type": "string" },
         "sourceIds": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": { "$ref": "#/$defs/identifier" },
+          "uniqueItems": true
         },
-        "templateId": { "type": "string" },
+        "templateId": { "$ref": "#/$defs/identifier" },
         "ignoreFailed": { "type": "boolean" },
         "enabled": { "type": "boolean" },
         "filterPresetIds": {
@@ -126,17 +145,19 @@
           "items": { "$ref": "#/$defs/filter" }
         },
         "meta": { "type": "object" }
-      }
+      },
+      "required": ["id", "name", "sourceIds", "templateId"]
     },
     "template": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string" },
+        "id": { "$ref": "#/$defs/identifier" },
         "name": { "type": "string" },
-        "target": { "enum": ["mihomo", "stash", "surge-mac"] },
+        "target": { "enum": ["mihomo", "stash"] },
         "config": { "type": "object" }
-      }
+      },
+      "required": ["id", "name", "target", "config"]
     }
   }
 }

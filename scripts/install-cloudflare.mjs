@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 
 const args = process.argv.slice(2);
@@ -33,6 +33,7 @@ function main() {
 
   checkCommand("node", ["--version"], { label: "Node.js" });
   checkCommand("pnpm", ["--version"], { label: "pnpm" });
+  checkCommand("curl", ["--version"], { label: "curl" });
   run("pnpm", ["run", "setup"], { label: "Install frontend and Worker dependencies", skip: doctorOnly });
   checkCommand("pnpm", ["--dir", "cloudflare", "exec", "wrangler", "--version"], { label: "Wrangler" });
 
@@ -45,12 +46,23 @@ function main() {
 
   ensureSetupFile();
   const setup = readSetup();
+  run("pnpm", ["run", "seed:validate"], { label: "Validate seed setup" });
   const deployment = setup.deployment && typeof setup.deployment === "object" ? setup.deployment : {};
   const workerName = stringValue(options.workerName, stringValue(deployment.workerName, "sub-store-cloudflare"));
   const d1DatabaseName = stringValue(options.d1DatabaseName, stringValue(deployment.d1DatabaseName, "sub-store-cloudflare"));
   const downloadTargets = normalizeTargets(deployment.downloadTargets);
-  const adminToken = options.adminToken || process.env.SUB_STORE_ADMIN_TOKEN || generateToken();
-  const downloadToken = options.downloadToken || process.env.SUB_STORE_PUBLIC_DOWNLOAD_TOKEN || generateToken();
+  const configuredAdminToken = stringValue(options.adminToken) || stringValue(process.env.SUB_STORE_ADMIN_TOKEN) || stringValue(deployment.adminToken);
+  const configuredDownloadToken = stringValue(options.downloadToken) || stringValue(process.env.SUB_STORE_PUBLIC_DOWNLOAD_TOKEN) || stringValue(deployment.downloadToken);
+  const adminToken = configuredAdminToken || generateToken();
+  const downloadToken = configuredDownloadToken || generateToken();
+
+  if (!configuredAdminToken || !configuredDownloadToken) {
+    if (!configuredAdminToken) deployment.adminToken = adminToken;
+    if (!configuredDownloadToken) deployment.downloadToken = downloadToken;
+    setup.deployment = deployment;
+    writeFileSync(SETUP_PATH, `${JSON.stringify(setup, null, 2)}\n`);
+    info(`Generated tokens were saved to ignored file ${SETUP_PATH} for safe resume.`);
+  }
 
   checkWranglerLogin({ soft: false });
   const databaseId = options.databaseId || process.env.CLOUDFLARE_D1_DATABASE_ID || stringValue(deployment.d1DatabaseId) || ensureD1(d1DatabaseName);
@@ -70,7 +82,6 @@ function main() {
   const deployResult = run("pnpm", ["run", "deploy:local"], { label: "Deploy Worker", capture: true, echo: true });
   state.deployed = true;
 
-  run("pnpm", ["run", "seed:validate"], { label: "Validate seed setup" });
   run("pnpm", ["run", "seed:render"], { label: "Render seed SQL" });
   state.renderedSeed = true;
   run("pnpm", ["run", "seed:remote"], { label: "Import seed into D1" });
@@ -91,6 +102,10 @@ function main() {
     downloadTargets,
     verification,
   });
+  if (!verification.ok) {
+    printHandoff();
+    fail("Deployment verification failed. Review the failed HTTP checks, then resume the installer.", 2);
+  }
 }
 
 function ensureSetupFile() {
@@ -257,7 +272,7 @@ function printResult({ baseUrl, adminToken, downloadToken, workerName, d1Databas
 }
 
 function verifyPrivatePaths() {
-  for (const path of [SETUP_PATH, LOCAL_WRANGLER_PATH, SEED_SQL_PATH]) {
+  for (const path of [SETUP_PATH, LOCAL_WRANGLER_PATH, SEED_SQL_PATH, ".dev.vars", "cloudflare/.dev.vars"]) {
     const tracked = spawnSync("git", ["ls-files", "--error-unmatch", path], { stdio: "ignore" });
     if (tracked.status === 0) fail(`Privacy check failed: ${path} is tracked by git.`);
     const ignored = spawnSync("git", ["check-ignore", "-q", path], { stdio: "ignore" });

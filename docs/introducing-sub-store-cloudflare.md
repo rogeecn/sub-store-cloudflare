@@ -27,8 +27,8 @@ sub-store-cloudflare 是一个跑在 Cloudflare Workers 上的订阅聚合工具
 
 主要是三点：
 
-1. **不要服务器。** Workers + D1，免费额度对个人够用，省掉服务器钱和养护。
-2. **workers.dev 域名本身在墙外。** 客户端抓订阅这一步是通的，不存在“服务器在境外、拉订阅还要梯子”的套娃。
+1. **不用自建服务器。** Workers + D1 省掉服务器和数据库服务的日常养护；是否落在免费额度内取决于你的实际请求量和 Cloudflare 当前套餐。
+2. **可以先用 workers.dev。** 实际可访问性取决于用户所在网络和 Cloudflare 路由；如果不稳定，可以绑定自己的管理或下载域名。
 3. **部署完就是 Web 管理界面加下载端点。** 手机也能开网页改配置。
 
 技术栈刻意保持小：Cloudflare Worker + Static Assets + D1 + Worker Secrets。KV、R2、Durable Objects、Queue、Cron 都不在核心路径里。

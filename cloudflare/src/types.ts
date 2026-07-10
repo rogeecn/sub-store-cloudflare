@@ -1,15 +1,3 @@
-export type SubStoreEnv = {
-  ASSETS?: Fetcher;
-  DB: D1Database;
-  SUB_STORE_APP_NAME?: string;
-  SUB_STORE_ADMIN_TOKEN?: string;
-  SUB_STORE_PUBLIC_DOWNLOAD_HOSTS?: string;
-  SUB_STORE_PUBLIC_DOWNLOAD_TOKEN?: string;
-  SUB_STORE_BOOTSTRAP_SOURCE_NAME?: string;
-  SUB_STORE_BOOTSTRAP_SOURCE_DISPLAY_NAME?: string;
-  SUB_STORE_BOOTSTRAP_SOURCE_CONTENT?: string;
-};
-
 export type FilterRule = {
   type:
     | "include"
@@ -105,7 +93,6 @@ export type SubscriptionTarget =
   | "mihomo"
   | "stash"
   | "surge"
-  | "surge-mac"
   | "surfboard"
   | "loon"
   | "egern"

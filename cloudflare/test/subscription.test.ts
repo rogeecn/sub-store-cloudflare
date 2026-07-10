@@ -12,11 +12,31 @@ describe("subscription parsing and limits", () => {
   it("normalizes target aliases and parses URI subscriptions", () => {
     expect(normalizeTargetAlias("clash-meta")).toBe("mihomo");
     expect(normalizeTargetAlias("singbox")).toBe("sing-box");
+    expect(normalizeTargetAlias("surge-mac")).toBeUndefined();
     const nodes = validateSubscriptionContent(
       "vless://00000000-0000-4000-8000-000000000002@example.com:443?security=tls#Parsed%20Node",
     );
     expect(nodes).toHaveLength(1);
     expect(nodes[0].name).toBe("Parsed Node");
+  });
+
+  it("renders every advertised target", async () => {
+    const targets = ["mihomo", "stash", "surge", "surfboard", "loon", "egern", "shadowrocket", "qx", "sing-box", "v2ray", "uri", "json"] as const;
+    for (const target of targets) {
+      const output = await buildSubscription({
+        source: {
+          id: "target-smoke",
+          name: "Target Smoke",
+          type: "local",
+          url: "",
+          content: "trojan://password@example.com:443?sni=example.com#Target%20Node",
+        },
+        sources: [],
+        requestUrl: new URL(`https://example.com/download/source/target-smoke/${target}`),
+        target,
+      });
+      expect(output.length, `${target} output`).toBeGreaterThan(0);
+    }
   });
 
   it("renders a JSON target from a local source", async () => {

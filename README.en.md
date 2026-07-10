@@ -66,7 +66,7 @@ For local agent-assisted installs with seeded sources and collections:
 pnpm run install:cloudflare
 ```
 
-The installer checks Cloudflare login, creates or reuses D1, renders local Wrangler config, sets Worker secrets, migrates D1, deploys the Worker, imports `config/agent-setup.local.json`, verifies HTTP endpoints, and prints ready-to-copy URLs.
+The installer validates the local setup, checks Cloudflare login, creates or reuses D1, renders local Wrangler config, sets Worker secrets, migrates D1, deploys the Worker, imports `config/agent-setup.local.json`, verifies HTTP endpoints, and prints ready-to-copy URLs. Generated tokens are persisted in the gitignored local setup so a failed run does not silently rotate them.
 
 If Cloudflare is not available yet:
 
@@ -86,7 +86,9 @@ For Codex, Claude Code, or another local coding agent, copy [agent/install.promp
 - Previews original and processed node lists in the admin UI.
 - Supports subscription usage info, config backup/restore, User-Agent options, pass-through User-Agent, timeout, and remote fetch concurrency.
 - Supports temporary `url`, `content`, and `ua` download parameters for one-off conversion.
-- Outputs Mihomo, Stash, Surge, Surge Mac, Surfboard, Loon, Egern, Shadowrocket, Quantumult X, sing-box, v2ray, URI, and JSON.
+- Outputs Mihomo, Stash, Surge, Surfboard, Loon, Egern, Shadowrocket, Quantumult X, sing-box, v2ray, URI, and JSON.
+
+Source, collection, and custom template IDs use 1–64 lowercase letters, numbers, underscores, or hyphens. An empty collection `sourceIds` array means all enabled sources; list IDs explicitly to select only specific sources.
 
 The deployment model is intentionally small: Workers Static Assets + Worker API + D1 + Worker Secrets.
 

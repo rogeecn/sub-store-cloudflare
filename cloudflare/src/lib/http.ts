@@ -1,6 +1,4 @@
 import type { Context } from "hono";
-import type { SubStoreEnv } from "../types";
-
 export function success(c: Context<{ Bindings: SubStoreEnv }>, data: unknown) {
   return c.json({ status: "success", data });
 }

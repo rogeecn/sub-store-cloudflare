@@ -17,7 +17,7 @@ Agent 的主要工作不是手工跑十几条命令，而是：
 - Worker 名称，默认 `sub-store-cloudflare`。
 - 使用 `workers.dev`，还是绑定自己的管理域名。
 - 是否需要单独下载域名。
-- 管理 token 和下载 token：你提供，或本地自动生成。
+- 管理 token 和下载 token：你提供，或本地自动生成并保存到被忽略的 setup 文件。
 - 远程订阅链接。
 - 本地节点文本，例如 `vless://`、`trojan://`、`ss://`、`vmess://`。
 - 想创建哪些组合订阅。
@@ -73,6 +73,8 @@ config/agent-setup.local.json
 
 这个文件按 [../config/agent-setup.schema.json](../config/agent-setup.schema.json) 写。常用过滤器可以直接写 `filterPresetIds`，生成 seed SQL 时会展开成 Worker 能读取的过滤器。
 
+Source、Collection 和自定义 Template 的 ID 只能使用 1–64 位小写字母、数字、下划线或连字符。`sourceIds: []` 表示组合订阅包含全部已启用订阅源；需要固定成员时必须显式列出 source ID。
+
 常用预设在 [../config/rule-presets.json](../config/rule-presets.json)：
 
 - `clean-provider-nodes`：去掉“官网、剩余、流量、过期、倍率”等信息节点。
@@ -97,7 +99,7 @@ config/agent-setup.local.json
 pnpm run install:cloudflare
 ```
 
-安装器会自动执行验证、部署、seed import 和 HTTP smoke test。
+安装器会自动执行验证、部署、seed import 和 HTTP smoke test。任一 HTTP 验证失败都会以非零状态退出，并给出恢复命令；Agent 不能把这种状态报告为部署成功。
 
 如果只想检查环境：
 
@@ -113,6 +115,7 @@ pnpm run install:doctor
 - `cloudflare/agent.seed.local.sql`
 - `cloudflare/wrangler.deploy.local.jsonc`
 - `.dev.vars`
+- `cloudflare/.dev.vars`
 
 结束前运行：
 

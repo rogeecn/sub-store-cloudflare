@@ -78,7 +78,7 @@ Cloudflare Worker
 - 下载链接级临时输入和一次性格式转换。
 - 单订阅源自定义 User-Agent 和透传 User-Agent。
 - 订阅流量信息、配置备份与恢复。
-- Mihomo、Stash、Surge、Surge Mac、Surfboard、Loon、Egern、Shadowrocket、Quantumult X、sing-box、v2ray、URI、JSON 输出。
+- Mihomo、Stash、Surge、Surfboard、Loon、Egern、Shadowrocket、Quantumult X、sing-box、v2ray、URI、JSON 输出。
 
 脚本运行、文件托管、Gist 同步、分享、归档、定时任务和日志系统不在核心路径里，也不会保留空壳 UI 或兼容接口。
 
@@ -113,7 +113,7 @@ Cloudflare Worker
 
 ## Templates
 
-内置模板由 Worker 代码直接维护，因此升级 Worker 后现有部署会立即获得模板修正，不需要重复 seed。用户自定义模板保存在 D1。模板只应用于 Mihomo、Stash 和 Surge Mac 这类 YAML 输出。导入接口接受 JSON 或 YAML；常见 Mihomo YAML 键名会归一化成内部配置。
+内置模板由 Worker 代码直接维护，因此升级 Worker 后现有部署会立即获得模板修正，不需要重复 seed。用户自定义模板保存在 D1。模板只应用于 Mihomo 和 Stash 这类 YAML 输出。导入接口接受 JSON 或 YAML；常见 Mihomo YAML 键名会归一化成内部配置。
 
 - `mixedPort`
 - `mixed-port`

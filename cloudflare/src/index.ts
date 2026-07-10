@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { apiRoutes } from "./routes/api";
 import { downloadRoutes } from "./routes/download";
 import { applyCorsHeaders, applySecurityHeaders } from "./lib/http";
-import type { SubStoreEnv } from "./types";
 
 const app = new Hono<{ Bindings: SubStoreEnv }>();
 
@@ -52,9 +51,7 @@ app.notFound((c) => c.env.ASSETS?.fetch(c.req.raw) || c.text("Not Found", 404));
 export default {
   async fetch(request: Request, env: SubStoreEnv, ctx: ExecutionContext) {
     const url = new URL(request.url);
-    const hostname = (request.headers.get("x-forwarded-host") || request.headers.get("host") || url.hostname)
-      .split(":")[0]
-      .toLowerCase();
+    const hostname = url.hostname.toLowerCase();
     const publicDownloadHosts = (env.SUB_STORE_PUBLIC_DOWNLOAD_HOSTS || "")
       .split(",")
       .map((host) => host.trim().toLowerCase())

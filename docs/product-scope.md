@@ -23,9 +23,9 @@ Sub-Store Cloudflare 是一个云端订阅配置器，不是完整 Sub-Store 的
 - 远程订阅 URL 和本地节点文本。
 - 单订阅源和组合订阅。
 - 常用节点过滤、重命名、正则删除、去重、排序、旗帜处理、域名解析和常用属性设置。
-- Mihomo / Stash / Surge Mac 规则模板，以及可导入的自定义模板。
+- Mihomo / Stash 规则模板，以及可导入的自定义模板。
 - 原始节点和处理后节点预览，本地节点格式校验。
-- Mihomo、Stash、Surge、Surge Mac、Surfboard、Loon、Egern、Shadowrocket、Quantumult X、sing-box、v2ray、URI 和 JSON 输出。
+- Mihomo、Stash、Surge、Surfboard、Loon、Egern、Shadowrocket、Quantumult X、sing-box、v2ray、URI 和 JSON 输出。
 - 下载链接 token、管理端 token、配置备份与恢复。
 - 远程订阅 User-Agent、透传 User-Agent、超时和并发设置。
 - 下载链接级临时 `url`、`content`、`ua` 参数，用于一次性复用当前过滤器、模板和输出格式。

@@ -88,6 +88,13 @@ const compactMeta = (data: JsonMap, excluded: string[]) => {
   return Object.fromEntries(Object.entries(data).filter(([key, value]) => !excludedSet.has(key) && value !== undefined));
 };
 
+const withoutLegacyCollectionMeta = (value: unknown): JsonMap => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(([key]) => key !== 'subscriptionTags' && key !== 'ignoreFailedRemoteSub'),
+  );
+};
+
 const cloneJson = <T>(value: T): T => JSON.parse(JSON.stringify(value ?? null));
 
 const regexUnion = (items: unknown[]): string => {
@@ -384,7 +391,7 @@ const fromApiFilters = (filters: unknown): UiProcess[] => {
 };
 
 const fromApiSource = (source: JsonMap): Sub => {
-  const meta = source.meta && typeof source.meta === 'object' ? source.meta : {};
+  const meta = withoutLegacyCollectionMeta(source.meta);
   return {
     ...meta,
     name: source.id,
@@ -418,6 +425,8 @@ const toApiSource = (data: JsonMap) => {
       'proxy',
       'mergeSources',
       'firstSubFlow',
+      'subscriptionTags',
+      'ignoreFailedRemoteSub',
       'meta',
     ]),
   };
@@ -435,7 +444,7 @@ const toApiSource = (data: JsonMap) => {
 };
 
 const fromApiCollection = (collection: JsonMap): Collection => {
-  const meta = collection.meta && typeof collection.meta === 'object' ? collection.meta : {};
+  const meta = withoutLegacyCollectionMeta(collection.meta);
   return {
     ...meta,
     name: collection.id,
@@ -444,7 +453,7 @@ const fromApiCollection = (collection: JsonMap): Collection => {
     subscriptions: Array.isArray(collection.sourceIds) ? collection.sourceIds : [],
     process: Array.isArray(meta.actions) ? cloneJson(meta.actions) : fromApiFilters(collection.filters),
     templateId: collection.templateId || 'acl4ssr-mihomo',
-    ignoreFailedRemoteSub: collection.ignoreFailed === false ? 'disabled' : 'quiet',
+    ignoreFailedRemoteSub: collection.ignoreFailed === false ? 'disabled' : 'skip',
     enabled: collection.enabled !== false,
     tag: normalizeTags(meta.tag),
   } as Collection;
@@ -466,6 +475,7 @@ const toApiCollection = (data: JsonMap) => {
       'templateId',
       'ignoreFailed',
       'ignoreFailedRemoteSub',
+      'subscriptionTags',
       'enabled',
       'proxy',
       'mergeSources',

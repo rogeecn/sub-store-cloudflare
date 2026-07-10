@@ -1,6 +1,6 @@
 export default {
   specificWord: {
-    singleSub: "单条订阅",
+    singleSub: "订阅源",
     collectionSub: "组合订阅",
     unknownType: "未知类型",
     unknownSource: "未知来源",
@@ -36,8 +36,9 @@ export default {
       language: "语言"
     },
     actions: {
+      back: "返回",
       refresh: "刷新数据",
-      add: "新建订阅"
+      add: "新建"
     },
     listSearch: {
       open: "搜索",
@@ -47,15 +48,19 @@ export default {
     },
     pagesTitle: {
       sub: "订阅管理",
-      my: "我的",
-      subEditor: "订阅编辑",
+      my: "设置",
+      subEditor: "编辑订阅",
+      sourceCreate: "新建订阅源",
+      sourceEdit: "编辑订阅源",
+      collectionCreate: "新建组合订阅",
+      collectionEdit: "编辑组合订阅",
       preview: "预览",
       notFound: "地址未找到"
     }
   },
   tabBar: {
     sub: "订阅",
-    my: "我的"
+    my: "设置"
   },
   notFoundPage: {
     title: "啊哦～ URL 错误！",
@@ -68,7 +73,7 @@ export default {
       succeed: "导入成功",
       failed: "导入失败\n{e}",
       tipsTitle: "导入订阅配置",
-      tipsContent: "可导入单条订阅或组合订阅的 JSON 配置。完整配置迁移请使用「我的」页面的备份恢复。"
+      tipsContent: "可导入订阅源或组合订阅的 JSON 配置。完整配置迁移请使用「设置」页面的备份恢复。"
     },
     addSubTitle: "选择要创建的订阅类型",
     previewTitle: "预览/拷贝订阅",
@@ -84,16 +89,18 @@ export default {
     },
     loadFailed: {
       title: "数据加载失败",
-      desc: "请检查管理 token、Worker API 和网络连接",
+      desc: "如果刚完成部署，请先输入管理 Token；否则请检查 Worker API 和网络连接。",
       btn: "重试",
+      tokenLabel: "管理 Token",
+      tokenPlaceholder: "输入 SUB_STORE_ADMIN_TOKEN",
+      saveAndRetry: "保存并重试",
       doc: "查看部署文档",
       followOfficialChannel: "查看项目文档后再排查部署状态",
       about: "查看项目文档"
     },
     collectionItem: {
-      noSub: "没有包含子订阅",
-      contain: "手动选择的订阅",
-      containTag: "关联的订阅标签"
+      noSub: "全部已启用订阅源",
+      contain: "包含的订阅源"
     },
     actions: {
       openMenu: "展开快捷操作",
@@ -218,10 +225,10 @@ export default {
         previewDisabledResponseOnlyTips: "修改响应仅在下载响应发送前执行，即时预览不会执行",
         nodeActionsHelp: "节点操作帮助",
         name: {
-          label: "名称",
-          placeholder: "唯一的标识名称(请勿包含 / )",
-          isEmpty: "名称不能为空",
-          isInvalid: "名称已存在或不合法"
+          label: "ID",
+          placeholder: "小写字母、数字、下划线或连字符",
+          isEmpty: "ID 不能为空",
+          isInvalid: "ID 已存在，或不符合 1–64 位格式要求"
         },
         remark: {
           label: "备注",
@@ -246,14 +253,6 @@ export default {
         tag: {
           label: "标签",
           placeholder: "点击右侧图标选择，标签(用 , 分隔) 将用于分组"
-        },
-        subscriptionTags: {
-          label: "关联订阅标签",
-          placeholder: "点击右侧图标选择，使用标签关联单条订阅(用 , 分隔)",
-          tips: {
-            title: "组合订阅与单条订阅",
-            content: "组合订阅中将包含\n\n1. 含有关联订阅标签的单条订阅\n\n2. 手动选择的单条订阅\n\n举例: 设置了关联订阅标签为 \"A, B\" 后\n包含标签 \"A\" 或 \"B\" 的单条订阅将自动关联到此组合订阅"
-          }
         },
         template: {
           label: "规则模板",
@@ -280,15 +279,16 @@ export default {
             fullScreenEditCancel: "取消全屏",
             label: "使用说明",
             title: "订阅链接",
-            content: "每行填写一个完整的 http(s) 远程订阅链接。多个链接会按行拉取并合并。\n\n流量信息相关参数:\n\nflowUrl: 自定义查询流量信息的 URL，优先读取响应体，也支持 subscription-userinfo/profile-web-page-url/plan-name 响应头\nflowUserAgent: 查询流量信息时使用的 User-Agent\nflowHeaders: 查询流量信息时使用的请求头，值为 URL 编码后的单行 JSON\nnoFlow: 不查询流量信息\nhideExpire: 隐藏到期时间\nshowRemaining: 显示剩余流量而不是已用流量\n\n远程订阅拉取的 User-Agent 可在本页单独设置；请求超时和并发在「我的」页面配置。\n\n例: https://example.com/sub?token=1#flowUrl=https%3A%2F%2Fexample.com%2Fuserinfo&showRemaining"
+            content: "每行填写一个完整的 http(s) 远程订阅链接。多个链接会按行拉取并合并。\n\n流量信息相关参数:\n\nflowUrl: 自定义查询流量信息的 URL，优先读取响应体，也支持 subscription-userinfo/profile-web-page-url/plan-name 响应头\nflowUserAgent: 查询流量信息时使用的 User-Agent\nflowHeaders: 查询流量信息时使用的请求头，值为 URL 编码后的单行 JSON\nnoFlow: 不查询流量信息\nhideExpire: 隐藏到期时间\nshowRemaining: 显示剩余流量而不是已用流量\n\n远程订阅拉取的 User-Agent 可在本页单独设置；请求超时和并发在「设置」页面配置。\n\n例: https://example.com/sub?token=1#flowUrl=https%3A%2F%2Fexample.com%2Fuserinfo&showRemaining"
           },
           isEmpty: "订阅链接不能为空",
           isIllegal: "订阅链接格式非法"
         },
         subscriptions: {
-          label: "手动选择的订阅",
-          empty: "请先创建单条订阅, 再使用组合订阅功能",
-          none: "未选择"
+          label: "包含的订阅源",
+          empty: "请先创建订阅源，再使用组合订阅功能",
+          none: "未选择",
+          allEnabled: "全部已启用订阅源"
         },
         content: {
           label: "内容",
@@ -321,20 +321,9 @@ export default {
         ignoreFailedRemoteSub: {
           label: "订阅失败处理",
           disabled: "严格报错",
-          disabledDesc: "订阅处理出错时，立即报错并通知。",
-          disabledNote: "出错即报错并通知",
-          enabled: "失败通知",
-          enabledDesc: "远程订阅失败时，跳过失败项并通知；其他错误仍报错。",
-          enabledNote: "远程失败跳过并通知",
-          quiet: "失败静默",
-          quietDesc: "远程订阅失败时，跳过失败项且不通知；其他错误仍报错。",
-          quietNote: "远程失败跳过且静默",
-          fallbackNotify: "兜底通知",
-          fallbackNotifyDesc: "订阅处理出现任何错误时，不报错，返回空结果并通知。",
-          fallbackNotifyNote: "任何错误都空结果并通知",
-          fallbackQuiet: "兜底静默",
-          fallbackQuietDesc: "订阅处理出现任何错误时，不报错，静默返回空结果。",
-          fallbackQuietNote: "任何错误都空结果且静默"
+          disabledNote: "任一订阅源失败即终止",
+          skip: "跳过失败源",
+          skipNote: "保留其他可用订阅源"
         },
         ua: {
           label: "User-Agent",

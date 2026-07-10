@@ -21,6 +21,8 @@ Follow AGENTS.md and agent/SKILL.md in this repository. Deploy this Sub-Store Cl
 - Prefer the one-command installer: `pnpm run install:cloudflare`.
 - Ask for missing inputs instead of inventing subscription data.
 - Use `config/agent-setup.local.json` as the single private setup file.
+- Use 1-64 lowercase letters, numbers, underscores, or hyphens for source, collection, and custom template ids.
+- Treat an empty collection `sourceIds` array as all enabled sources; use explicit ids for fixed membership.
 - Use `filterPresetIds` from `config/rule-presets.json` when the user asks for common filtering.
 - Use `acl4ssr-mihomo-no-emoji` when the user asks for rule groups without emoji.
 - Use D1 for sources, collections, templates, settings, and filters.

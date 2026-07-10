@@ -1,8 +1,6 @@
 import {
   BUILTIN_TEMPLATE_IDS,
   BUILTIN_TEMPLATES,
-  DEFAULT_COLLECTION_ID,
-  DEFAULT_SOURCE_ID,
   DEFAULT_TEMPLATE_CONFIG,
   DEFAULT_TEMPLATE_ID,
 } from "./defaults";
@@ -15,7 +13,6 @@ import type {
   SourceRecord,
   SubscriptionCollection,
   SubscriptionSource,
-  SubStoreEnv,
   SubscriptionTarget,
   TemplateRecord,
 } from "../types";
@@ -141,8 +138,12 @@ export async function getSource(env: SubStoreEnv, id: string) {
 }
 
 export async function deleteSource(env: SubStoreEnv, id: string) {
+  const references = (await listCollections(env))
+    .filter((collection) => collection.sourceIds.includes(id))
+    .map((collection) => collection.id);
+  if (references.length > 0) return { deleted: false, references };
   await env.DB.prepare("DELETE FROM sources WHERE id = ?").bind(id).run();
-  return { deleted: true };
+  return { deleted: true, references: [] as string[] };
 }
 
 export async function listCollections(env: SubStoreEnv) {
@@ -347,24 +348,6 @@ export async function getSubscriptionCollection(env: SubStoreEnv, id: string): P
 export async function getRoutingTemplate(env: SubStoreEnv, id: string | undefined) {
   const template = await getTemplate(env, id || DEFAULT_TEMPLATE_ID);
   return template ? { id: template.id, name: template.name, target: template.target, config: template.config } : undefined;
-}
-
-export async function bootstrapFromEnv(env: SubStoreEnv) {
-  const bootstrapContent = env.SUB_STORE_BOOTSTRAP_SOURCE_CONTENT || "";
-  if (!bootstrapContent) return;
-  const now = Date.now();
-  await env.DB.batch([
-    env.DB.prepare(
-      `INSERT OR IGNORE INTO sources
-       (id, name, type, url, content, enabled, filters_json, meta_json, created_at, updated_at)
-       VALUES (?, ?, 'local', '', ?, 1, '[]', '{}', ?, ?)`,
-    ).bind(DEFAULT_SOURCE_ID, env.SUB_STORE_BOOTSTRAP_SOURCE_DISPLAY_NAME || "Bootstrap Source", bootstrapContent, now, now),
-    env.DB.prepare(
-      `INSERT OR IGNORE INTO collections
-       (id, name, source_ids_json, filters_json, template_id, ignore_failed, enabled, meta_json, created_at, updated_at)
-       VALUES (?, 'Daily', ?, '[]', ?, 1, 1, '{}', ?, ?)`,
-    ).bind(DEFAULT_COLLECTION_ID, JSON.stringify([DEFAULT_SOURCE_ID]), DEFAULT_TEMPLATE_ID, now, now),
-  ]);
 }
 
 function builtinTemplateRecord(template: (typeof BUILTIN_TEMPLATES)[number]): TemplateRecord {

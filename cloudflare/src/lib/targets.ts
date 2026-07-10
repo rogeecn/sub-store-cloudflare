@@ -8,8 +8,6 @@ const TARGET_ALIASES: Record<string, SubscriptionTarget> = {
   mihomo: "mihomo",
   stash: "stash",
   surge: "surge",
-  "surge-mac": "surge-mac",
-  surgemac: "surge-mac",
   surfboard: "surfboard",
   loon: "loon",
   egern: "egern",

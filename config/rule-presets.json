@@ -36,7 +36,7 @@
       "id": "clean-provider-nodes",
       "label": "Remove provider info nodes",
       "filters": [
-        { "type": "exclude", "field": "name", "pattern": "官网|剩余|流量|过期|到期|套餐|倍率|重置|订阅|官网|群|更新" }
+        { "type": "exclude", "field": "name", "pattern": "官网|剩余|流量|过期|到期|套餐|倍率|重置|订阅说明|交流群|官方群|TG群|电报群|更新时间|节点更新" }
       ]
     },
     {

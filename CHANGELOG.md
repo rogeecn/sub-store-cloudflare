@@ -6,6 +6,11 @@ This project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+### Changed
+
+- Aligned source and collection validation, immutable IDs, partial updates, and empty-collection membership semantics across the Worker, frontend, installer, and documentation.
+- Removed the advertised `surge-mac` target because it had no independent renderer; use `surge` or a supported YAML target instead.
+
 ## [0.2.0] - 2026-07-10
 
 ### Added
@@ -55,7 +60,7 @@ This project follows semantic versioning where practical.
 - Source and collection management for remote subscription URLs and local node text.
 - Node filters for include/exclude, rename, delete-field, dedupe, sort, regex-sort, flag handling, quick options, and DNS resolve workflows.
 - Built-in routing templates for Mihomo-compatible YAML output.
-- Output targets for Mihomo, Stash, Surge, Surge Mac, Surfboard, Loon, Egern, Shadowrocket, Quantumult X, sing-box, v2ray, URI, and JSON.
+- Output targets for Mihomo, Stash, Surge, Surfboard, Loon, Egern, Shadowrocket, Quantumult X, sing-box, v2ray, URI, and JSON.
 - Preview, backup/restore, temporary `url` / `content` / `ua` conversion parameters, and subscription usage metadata.
 - Deploy to Cloudflare button support with root `wrangler.jsonc`.
 - Agent/CLI installer via `pnpm run install:cloudflare`.

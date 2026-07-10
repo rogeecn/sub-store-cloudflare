@@ -53,7 +53,7 @@ export async function buildSubscription(options: BuildOptions) {
   const proxies = await loadProxyNodes(options);
   if (proxies.length === 0) throw new Error("No available nodes found");
 
-  if (options.target === "mihomo" || options.target === "stash" || options.target === "surge-mac") return renderMihomoYaml(proxies, options.requestUrl, options.template?.config);
+  if (options.target === "mihomo" || options.target === "stash") return renderMihomoYaml(proxies, options.requestUrl, options.template?.config);
   if (options.target === "surge") return renderSurgeProxies(proxies);
   if (options.target === "surfboard") return renderSurfboardProxies(proxies);
   if (options.target === "loon") return renderLoonProxies(proxies);

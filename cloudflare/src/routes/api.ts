@@ -10,7 +10,6 @@ import {
   deleteCollection,
   deleteSource,
   deleteTemplate,
-  bootstrapFromEnv,
   exportStorage,
   getCollection,
   getSettings,
@@ -33,7 +32,6 @@ import type {
   CollectionRecord,
   FilterRule,
   SourceRecord,
-  SubStoreEnv,
   SubscriptionCollection,
   SubscriptionSource,
   SubscriptionTarget,
@@ -49,7 +47,6 @@ const FRONTEND_VERSION = "2.17.35";
 apiRoutes.use("*", async (c, next) => {
   const invalid = await requireAdmin(c);
   if (invalid) return invalid;
-  await bootstrapFromEnv(c.env);
   return next();
 });
 apiRoutes.use(
@@ -84,8 +81,15 @@ apiRoutes.post("/storage", async (c) => {
 apiRoutes.get("/sources", async (c) => success(c, (await listSources(c.env)).map(toApiSource)));
 apiRoutes.post("/sources", async (c) => {
   const input = await c.req.json<JsonMap>();
-  if (!stringValue(input.id || input.name)) return failed(c, "Source id is required");
-  return success(c, toApiSource(await upsertSource(c.env, fromApiSource(input))));
+  const payloadError = validateSourcePayload(input);
+  if (payloadError) return failed(c, payloadError);
+  const idError = validateRecordId(input.id || input.name, "Source");
+  if (idError) return failed(c, idError);
+  const source = fromApiSource(input);
+  if (await getSource(c.env, source.id || "")) return failed(c, "Source id already exists", 409);
+  const validationError = validateSource(source);
+  if (validationError) return failed(c, validationError);
+  return success(c, toApiSource(await upsertSource(c.env, source)));
 });
 apiRoutes.put("/sources", async (c) => {
   const input = await c.req.json().catch(() => []);
@@ -102,15 +106,34 @@ apiRoutes.get("/sources/:name", async (c) => {
 apiRoutes.patch("/sources/:name", async (c) => {
   const existing = await getSource(c.env, c.req.param("name"));
   if (!existing) return failed(c, "Source not found", 404);
-  return success(c, toApiSource(await upsertSource(c.env, mergeSource(existing, fromApiSource(await c.req.json())))));
+  const input = await c.req.json<JsonMap>();
+  const payloadError = validateSourcePayload(input, true);
+  if (payloadError) return failed(c, payloadError);
+  const source = mergeSource(existing, fromApiSource(input, true));
+  const validationError = validateSource(source);
+  if (validationError) return failed(c, validationError);
+  return success(c, toApiSource(await upsertSource(c.env, source)));
 });
-apiRoutes.delete("/sources/:name", async (c) => success(c, await deleteSource(c.env, c.req.param("name"))));
+apiRoutes.delete("/sources/:name", async (c) => {
+  const result = await deleteSource(c.env, c.req.param("name"));
+  if (!result.deleted) {
+    return failed(c, `Source is used by collections: ${result.references.join(", ")}`, 409);
+  }
+  return success(c, result);
+});
 
 apiRoutes.get("/collections", async (c) => success(c, (await listCollections(c.env)).map(toApiCollection)));
 apiRoutes.post("/collections", async (c) => {
   const input = await c.req.json<JsonMap>();
-  if (!stringValue(input.id || input.name)) return failed(c, "Collection id is required");
-  return success(c, toApiCollection(await upsertCollection(c.env, fromApiCollection(input))));
+  const payloadError = validateCollectionPayload(input);
+  if (payloadError) return failed(c, payloadError);
+  const idError = validateRecordId(input.id || input.name, "Collection");
+  if (idError) return failed(c, idError);
+  const collection = fromApiCollection(input);
+  if (await getCollection(c.env, collection.id || "")) return failed(c, "Collection id already exists", 409);
+  const validationError = await validateCollection(c.env, collection);
+  if (validationError) return failed(c, validationError);
+  return success(c, toApiCollection(await upsertCollection(c.env, collection)));
 });
 apiRoutes.put("/collections", async (c) => {
   const input = await c.req.json().catch(() => []);
@@ -127,7 +150,13 @@ apiRoutes.get("/collections/:name", async (c) => {
 apiRoutes.patch("/collections/:name", async (c) => {
   const existing = await getCollection(c.env, c.req.param("name"));
   if (!existing) return failed(c, "Collection not found", 404);
-  return success(c, toApiCollection(await upsertCollection(c.env, mergeCollection(existing, fromApiCollection(await c.req.json())))));
+  const input = await c.req.json<JsonMap>();
+  const payloadError = validateCollectionPayload(input, true);
+  if (payloadError) return failed(c, payloadError);
+  const collection = mergeCollection(existing, fromApiCollection(input, true));
+  const validationError = await validateCollection(c.env, collection);
+  if (validationError) return failed(c, validationError);
+  return success(c, toApiCollection(await upsertCollection(c.env, collection)));
 });
 apiRoutes.delete("/collections/:name", async (c) => success(c, await deleteCollection(c.env, c.req.param("name"))));
 
@@ -252,7 +281,7 @@ function defaultSettings(env: SubStoreEnv) {
       isSimpleShowRemark: false,
       isEditorCommon: false,
       manualSubscriptionsDisplayMode: "collapsed",
-      editorGroupingMode: "edit-only",
+      editorGroupingMode: "always",
       isSimpleReicon: false,
       isSubItemMenuFold: true,
       showFloatingRefreshButton: false,
@@ -290,23 +319,23 @@ function toApiSource(source: SourceRecord) {
   };
 }
 
-function fromApiSource(input: JsonMap): Partial<SourceRecord> {
+function fromApiSource(input: JsonMap, partial = false): Partial<SourceRecord> {
   const id = stringValue(input.id || input.name);
-  const name = stringValue(input.name || input.id);
-  return {
-    id,
-    name,
-    type: input.type === "local" ? "local" : "remote",
-    url: stringValue(input.url),
-    content: stringValue(input.content),
-    enabled: input.enabled !== false,
-    filters: filterList(input.filters, input.process),
-    meta: objectValue(input.meta),
-  };
+  const name = partial ? stringValue(input.name) : stringValue(input.name || input.id);
+  const output: Partial<SourceRecord> = {};
+  if (!partial || id) output.id = id;
+  if (!partial || name) output.name = name;
+  if (!partial || "type" in input) output.type = input.type === "local" ? "local" : "remote";
+  if (!partial || "url" in input) output.url = stringValue(input.url);
+  if (!partial || "content" in input) output.content = stringValue(input.content);
+  if (!partial || "enabled" in input) output.enabled = input.enabled !== false;
+  if (!partial || "filters" in input || "process" in input) output.filters = filterList(input.filters, input.process);
+  if (!partial || "meta" in input) output.meta = objectValue(input.meta);
+  return output;
 }
 
 function mergeSource(existing: SourceRecord, next: Partial<SourceRecord>) {
-  return { ...existing, ...next, meta: { ...existing.meta, ...next.meta } };
+  return { ...existing, ...next, id: existing.id, meta: { ...existing.meta, ...next.meta } };
 }
 
 function toApiCollection(collection: CollectionRecord) {
@@ -322,23 +351,23 @@ function toApiCollection(collection: CollectionRecord) {
   };
 }
 
-function fromApiCollection(input: JsonMap): Partial<CollectionRecord> {
+function fromApiCollection(input: JsonMap, partial = false): Partial<CollectionRecord> {
   const id = stringValue(input.id || input.name);
-  const name = stringValue(input.name || input.id);
-  return {
-    id,
-    name,
-    sourceIds: stringArray(input.sourceIds),
-    filters: filterList(input.filters, input.process),
-    templateId: stringValue(input.templateId) || undefined,
-    ignoreFailed: input.ignoreFailed !== false,
-    enabled: input.enabled !== false,
-    meta: objectValue(input.meta),
-  };
+  const name = partial ? stringValue(input.name) : stringValue(input.name || input.id);
+  const output: Partial<CollectionRecord> = {};
+  if (!partial || id) output.id = id;
+  if (!partial || name) output.name = name;
+  if (!partial || "sourceIds" in input) output.sourceIds = stringArray(input.sourceIds);
+  if (!partial || "filters" in input || "process" in input) output.filters = filterList(input.filters, input.process);
+  if (!partial || "templateId" in input) output.templateId = stringValue(input.templateId) || undefined;
+  if (!partial || "ignoreFailed" in input) output.ignoreFailed = input.ignoreFailed !== false;
+  if (!partial || "enabled" in input) output.enabled = input.enabled !== false;
+  if (!partial || "meta" in input) output.meta = objectValue(input.meta);
+  return output;
 }
 
 function mergeCollection(existing: CollectionRecord, next: Partial<CollectionRecord>) {
-  return { ...existing, ...next, meta: { ...existing.meta, ...next.meta } };
+  return { ...existing, ...next, id: existing.id, meta: { ...existing.meta, ...next.meta } };
 }
 
 function toApiTemplate(template: TemplateRecord) {
@@ -404,9 +433,55 @@ function buildDownloadLink(c: ApiContext, kind: "source" | "collection", id: str
 
 function getPublicBaseUrl(c: ApiContext) {
   const publicHost = (c.env.SUB_STORE_PUBLIC_DOWNLOAD_HOSTS || "").split(",").map((host) => host.trim()).find(Boolean);
-  const host = publicHost || c.req.header("x-forwarded-host") || c.req.header("host") || new URL(c.req.url).host;
-  const protocol = publicHost ? "https:" : new URL(c.req.url).protocol;
-  return `${protocol}//${host}`;
+  return publicHost ? `https://${publicHost}` : new URL(c.req.url).origin;
+}
+
+function validateSource(input: Partial<SourceRecord>) {
+  const idError = validateRecordId(input.id, "Source");
+  if (idError) return idError;
+  if (input.type === "local") {
+    return stringValue(input.content) ? undefined : "Local source content is required";
+  }
+  const urls = stringValue(input.url).split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  if (urls.length === 0) return "Remote source URL is required";
+  if (urls.some((url) => !/^https?:\/\//i.test(url))) return "Remote source URLs must use http or https";
+  return undefined;
+}
+
+function validateSourcePayload(input: JsonMap, partial = false) {
+  if ((!partial || "type" in input) && input.type !== "remote" && input.type !== "local") {
+    return "Source type must be remote or local";
+  }
+  return undefined;
+}
+
+async function validateCollection(env: SubStoreEnv, input: Partial<CollectionRecord>) {
+  const idError = validateRecordId(input.id, "Collection");
+  if (idError) return idError;
+  const sourceIds = input.sourceIds || [];
+  const sourceIdSet = new Set((await listSources(env)).map((source) => source.id));
+  const missingSources = sourceIds.filter((id) => !sourceIdSet.has(id));
+  if (missingSources.length > 0) return `Collection references missing sources: ${missingSources.join(", ")}`;
+
+  const templateId = stringValue(input.templateId);
+  if (templateId && !(await getTemplate(env, templateId))) return `Collection references missing template: ${templateId}`;
+  return undefined;
+}
+
+function validateCollectionPayload(input: JsonMap, partial = false) {
+  if ((!partial || "sourceIds" in input) && input.sourceIds !== undefined && !Array.isArray(input.sourceIds)) {
+    return "Collection sourceIds must be an array";
+  }
+  return undefined;
+}
+
+function validateRecordId(input: unknown, label: string) {
+  const id = stringValue(input);
+  if (!id) return `${label} id is required`;
+  if (!/^[a-z0-9_-]{1,64}$/.test(id)) {
+    return `${label} id must use 1-64 lowercase letters, numbers, underscores, or hyphens`;
+  }
+  return undefined;
 }
 
 function normalizeDownloadTarget(input: unknown): SubscriptionTarget | undefined {

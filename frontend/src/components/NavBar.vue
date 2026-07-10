@@ -12,6 +12,8 @@
             v-if="isNeedBack"
             type="button"
             class="nav-leading-button icon-back"
+            :aria-label="t('navBar.actions.back')"
+            :title="t('navBar.actions.back')"
             @click.stop="back"
           >
             <font-awesome-icon
@@ -138,6 +140,15 @@ const leftIconClass = computed(() => {
 const currentTitle = computed(() => {
   if (isListSearchActive.value) {
     return "";
+  }
+
+  if (route.meta.title === "subEditor") {
+    const isCollection = route.params.editType === "collections";
+    const isCreate = route.params.id === "UNTITLED";
+    const titleKey = isCollection
+      ? (isCreate ? "collectionCreate" : "collectionEdit")
+      : (isCreate ? "sourceCreate" : "sourceEdit");
+    return t(`navBar.pagesTitle.${titleKey}`);
   }
 
   const metaTitle = route.meta.title;

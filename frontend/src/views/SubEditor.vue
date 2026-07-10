@@ -65,6 +65,10 @@
             @blur="customerBlurValidate('name')"
             v-model.trim="form.name"
             :placeholder="$t(`editorPage.subConfig.basic.name.placeholder`)"
+            :disabled="isEditMode"
+            maxlength="64"
+            autocapitalize="none"
+            spellcheck="false"
             type="text"
           />
         </nut-form-item>
@@ -115,7 +119,7 @@
             type="text"
             input-align="right"
             right-icon="rect-right"
-            @click-right-icon="showTagPopup('tag')"
+            @click-right-icon="showTagPopup"
           >
           </nut-input>
         </nut-form-item>
@@ -326,24 +330,6 @@
               </view>
             </view>
           </nut-cell>
-          <!-- subscriptionTags -->
-          <nut-form-item
-            :label="$t(`editorPage.subConfig.basic.subscriptionTags.label`)"
-            prop="subscriptionTags"
-          >
-            <nut-input
-              :border="false"
-              class="nut-input-text"
-              v-model.trim="form.subscriptionTags"
-              :placeholder="$t(`editorPage.subConfig.basic.subscriptionTags.placeholder`)"
-              type="text"
-              input-align="right"
-              left-icon="tips"
-              right-icon="rect-right"
-              @click-left-icon="subscriptionTagsTips"
-              @click-right-icon="showTagPopup('linkTag')"
-            />
-          </nut-form-item>
           <nut-cell class="nut-form-item line include-subs-trigger" @click.stop="toggleManualSubscriptionsFold">
             <view class="nut-cell__title nut-form-item__label">
               {{ $t(`editorPage.subConfig.basic.subscriptions.label`) }}
@@ -445,6 +431,7 @@
         </template>
 
         <nut-form-item
+          v-if="editType === 'collections'"
           :label="$t(`editorPage.subConfig.basic.ignoreFailedRemoteSub.label`)"
           class="failure-mode-trigger"
           prop="ignoreFailedRemoteSub"
@@ -515,6 +502,7 @@
     @refresh="refreshCompare"
   />
   <DesktopPicker
+    v-if="editType === 'collections'"
     v-model="selectedSubFailureMode"
     v-model:visible="showSubFailureModePicker"
     :columns="subFailureModeColumns"
@@ -619,8 +607,7 @@ const isEditMode = computed(() => routeConfigName.value !== "UNTITLED");
 const editorGroupingMode = computed<EditorGroupingMode>(() => appearanceSetting.value.editorGroupingMode || "edit-only");
 const editorTabsEnabled = computed(() => {
   if (editorGroupingMode.value === "disabled") return false;
-  if (editorGroupingMode.value === "always") return true;
-  return isEditMode.value;
+  return true;
 });
 const SUB_EDITOR_TABS = ["display", "content", "actions"] as const;
 type SubEditorTab = (typeof SUB_EDITOR_TABS)[number];
@@ -637,7 +624,6 @@ const SUB_EDITOR_PROP_TO_TAB: Partial<Record<string, SubEditorTab>> = {
   passThroughUA: "content",
   ua: "content",
   subUserinfo: "content",
-  subscriptionTags: "content",
   ignoreFailedRemoteSub: "content",
 };
 const availableEditorTabs = computed(() => [...SUB_EDITOR_TABS]);
@@ -764,31 +750,19 @@ type SubSelectRow = [string, string, string | undefined, string[] | undefined, b
   const manualSubscriptionsGroupInitialized = ref(false);
   const manualSubscriptionsGroupTouched = ref(false);
   const tagPopupVisible = ref(false);
-  const tagType = ref('tag'); // 标签tag | 关联订阅标签linkTag
   const tagPopupRef = ref(null);
-  const currentTag = computed(() => {
-    if (tagType.value === 'linkTag') {
-      return form.subscriptionTags
-    } else {
-      return form.tag
-    }
-  })
-  const showTagPopup = (type:string) => {
-    tagType.value = type || 'tag'
+  const currentTag = computed(() => form.tag)
+  const showTagPopup = () => {
     tagPopupVisible.value = true
   };
   const setTagValue = (tag: any) => {
-    if (tagType.value === 'linkTag') {
-      form.subscriptionTags = tag;
-    } else {
-      form.tag = tag;      
-    }
+    form.tag = tag;
   };
 const selectedSubs = computed(() => {
   const subscriptions = form.subscriptions || [];
   if(!Array.isArray(subscriptions) || subscriptions.length === 0) {
     if (!Array.isArray(subsSelectList.value) || subsSelectList.value.length === 0) return `: ${t(`editorPage.subConfig.basic.subscriptions.empty`)}`
-    return `: ${t(`editorPage.subConfig.basic.subscriptions.none`)}`
+    return `: ${t(`editorPage.subConfig.basic.subscriptions.allEnabled`)}`
   }
     return `: ${subscriptions.map((name) => {
       const sub = subsStore.getOneSub(name);
@@ -806,14 +780,9 @@ const selectedSubsDisplay = computed(() => selectedSubs.value.replace(/^:\s*/, "
         note: t(`${prefix}.disabledNote`),
       },
       {
-        value: "enabled",
-        label: t(`${prefix}.enabled`),
-        note: t(`${prefix}.enabledNote`),
-      },
-      {
-        value: "quiet",
-        label: t(`${prefix}.quiet`),
-        note: t(`${prefix}.quietNote`),
+        value: "skip",
+        label: t(`${prefix}.skip`),
+        note: t(`${prefix}.skipNote`),
       },
     ];
   });
@@ -826,7 +795,7 @@ const selectedSubsDisplay = computed(() => selectedSubs.value.replace(/^:\s*/, "
   const subFailureModeValue = computed(() => {
     return form.ignoreFailedRemoteSub === false || form.ignoreFailedRemoteSub == null
       ? "disabled"
-      : form.ignoreFailedRemoteSub;
+      : "skip";
   });
   const subFailureModeColumns = computed(() => {
     return subFailureModeOptions.value.map((option) => ({
@@ -963,8 +932,8 @@ watchEffect(() => {
   }
   const newProcess = JSON.parse(JSON.stringify(sourceData.process));
   let ignoreFailedRemoteSub = sourceData.ignoreFailedRemoteSub;
-  if (ignoreFailedRemoteSub === true) {
-    ignoreFailedRemoteSub = 'quiet';
+  if (ignoreFailedRemoteSub === true || ignoreFailedRemoteSub === 'quiet' || ignoreFailedRemoteSub === 'enabled') {
+    ignoreFailedRemoteSub = 'skip';
   } else if (ignoreFailedRemoteSub === false || ignoreFailedRemoteSub == null) {
     ignoreFailedRemoteSub = 'disabled';
   }
@@ -980,10 +949,6 @@ watchEffect(() => {
   form.tag = Array.isArray(sourceData.tag)
     ? sourceData.tag.join(", ")
     : sourceData.tag;
-  form.subscriptionTags = Array.isArray(sourceData.subscriptionTags)
-    ? sourceData.subscriptionTags.join(", ")
-    : sourceData.subscriptionTags;
-
   switch (editType) {
     case "collections":
       form.subscriptions = Array.isArray(sourceData.subscriptions)
@@ -1220,14 +1185,6 @@ const fetchCompareData = async () => {
           .filter((item: string) => item.length)
       ),
     ];
-    data.subscriptionTags = [
-      ...new Set(
-        (data.subscriptionTags || "")
-          .split(",")
-          .map((item: string) => item.trim())
-          .filter((item: string) => item.length)
-      ),
-    ];
     actionsChecked.forEach((item) => {
       if (!item[1]) {
         const index = data.process.findIndex((i) => i.id === item[0]);
@@ -1365,14 +1322,6 @@ const submit = () => {
           .filter((item: string) => item.length)
       ),
     ];
-    data.subscriptionTags = [
-      ...new Set(
-        (data.subscriptionTags || "")
-          .split(",")
-          .map((item: string) => item.trim())
-          .filter((item: string) => item.length)
-      ),
-    ];
     data["display-name"] = data.displayName;
     data.process = actionsToProcess(data.process, actionsList, ignoreList);
     if (data.ignoreFailedRemoteSub === "disabled"){
@@ -1420,17 +1369,12 @@ const submit = () => {
 // 名称验证器
 const nameValidator = (val: string): Promise<boolean> => {
   return new Promise((resolve) => {
-    if (val === "UNTITLED") resolve(false);
-    if (/\//.test(val)) {
-      resolve(false);
-    }
+    if (!/^[a-z0-9_-]{1,64}$/.test(val) || val === "UNTITLED") return resolve(false);
     const nameList = [
       ...subsStore.subs.map((item) => item.name),
       ...subsStore.collections.map((item) => item.name),
     ];
-    nameList.includes(val) && configName !== val
-      ? resolve(false)
-      : resolve(true);
+    return resolve(!(nameList.includes(val) && configName !== val));
   });
 };
 
@@ -1486,18 +1430,6 @@ const urlValidator = (val: string): Promise<boolean> => {
         title: t("editorPage.subConfig.basic.subUserinfo.tips.title"),
         content: t("editorPage.subConfig.basic.subUserinfo.tips.content"),
         popClass: 'auto-dialog',
-        okText: 'OK',
-        noCancelBtn: true,
-        closeOnPopstate: true,
-        lockScroll: false,
-      });
-  };
-  const subscriptionTagsTips = () => {
-    Dialog({
-        title: t("editorPage.subConfig.basic.subscriptionTags.tips.title"),
-        content: t("editorPage.subConfig.basic.subscriptionTags.tips.content"),
-        popClass: 'auto-dialog',
-        textAlign: 'left',
         okText: 'OK',
         noCancelBtn: true,
         closeOnPopstate: true,

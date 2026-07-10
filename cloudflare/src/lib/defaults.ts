@@ -1,7 +1,5 @@
 import type { RoutingTemplateConfig, TemplateRecord } from "../types";
 
-export const DEFAULT_SOURCE_ID = "demo-source";
-export const DEFAULT_COLLECTION_ID = "daily";
 export const DEFAULT_TEMPLATE_ID = "acl4ssr-mihomo";
 
 const TEST_URL = "https://www.gstatic.com/generate_204";

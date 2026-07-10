@@ -42,6 +42,166 @@ describe("Worker and D1 integration", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
     expect(response.headers.get("permissions-policy")).toContain("camera=()");
+
+    const spoofedHost = await workerRequest("/api/env", {
+      headers: { "x-forwarded-host": "downloads.example.com" },
+    });
+    expect(spoofedHost.status).toBe(200);
+  });
+
+  it("keeps record ids immutable and preserves omitted fields in partial updates", async () => {
+    const sourceCreate = await workerRequest("/api/sources", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "patch-source",
+        name: "Patch Source",
+        type: "local",
+        content: "trojan://password@example.com:443#Patch%20Node",
+        enabled: true,
+        meta: { remark: "keep-me" },
+      }),
+    });
+    expect(sourceCreate.status).toBe(200);
+
+    const sourcePatch = await workerRequest("/api/sources/patch-source", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: "renamed-source", name: "Updated Source" }),
+    });
+    const patchedSource = getPath(await jsonObject(sourcePatch), "data") as Record<string, unknown>;
+    expect(sourcePatch.status).toBe(200);
+    expect(patchedSource.id).toBe("patch-source");
+    expect(patchedSource.name).toBe("Updated Source");
+    expect(patchedSource.content).toContain("Patch%20Node");
+    expect(getPath(patchedSource, "meta", "remark")).toBe("keep-me");
+    expect((await workerRequest("/api/sources/renamed-source")).status).toBe(404);
+
+    const linkResponse = await workerRequest("/api/link/source/patch-source?target=json", {
+      headers: { "x-forwarded-host": "attacker.example" },
+    });
+    expect(getPath(await jsonObject(linkResponse), "data", "url")).toBe(
+      `https://downloads.example.com/download/source/patch-source/json?token=${DOWNLOAD_TOKEN}`,
+    );
+
+    const collectionCreate = await workerRequest("/api/collections", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "patch-collection",
+        name: "Patch Collection",
+        sourceIds: ["patch-source"],
+        templateId: "mihomo-basic",
+        ignoreFailed: false,
+        enabled: true,
+      }),
+    });
+    expect(collectionCreate.status).toBe(200);
+
+    const collectionPatch = await workerRequest("/api/collections/patch-collection", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: "renamed-collection", name: "Updated Collection" }),
+    });
+    const patchedCollection = getPath(await jsonObject(collectionPatch), "data") as Record<string, unknown>;
+    expect(collectionPatch.status).toBe(200);
+    expect(patchedCollection.id).toBe("patch-collection");
+    expect(patchedCollection.sourceIds).toEqual(["patch-source"]);
+    expect(patchedCollection.templateId).toBe("mihomo-basic");
+    expect(patchedCollection.ignoreFailed).toBe(false);
+
+    const blockedDelete = await workerRequest("/api/sources/patch-source", { method: "DELETE" });
+    expect(blockedDelete.status).toBe(409);
+    expect(getPath(await jsonObject(blockedDelete), "error", "message")).toContain("patch-collection");
+  });
+
+  it("treats an empty sourceIds list as all enabled sources", async () => {
+    for (const [id, nodeName] of [["all-source-a", "All Node A"], ["all-source-b", "All Node B"]]) {
+      const response = await workerRequest("/api/sources", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id,
+          name: id,
+          type: "local",
+          content: `trojan://password@example.com:443#${encodeURIComponent(nodeName)}`,
+          enabled: true,
+        }),
+      });
+      expect(response.status).toBe(200);
+    }
+
+    const collection = await workerRequest("/api/collections", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "all-enabled",
+        name: "All Enabled",
+        sourceIds: [],
+        templateId: "mihomo-basic",
+        enabled: true,
+      }),
+    });
+    expect(collection.status).toBe(200);
+
+    const download = await workerRequest(`/download/collection/all-enabled/json/${DOWNLOAD_TOKEN}`, {}, false);
+    expect(download.status).toBe(200);
+    const body = await download.text();
+    expect(body).toContain("All Node A");
+    expect(body).toContain("All Node B");
+  });
+
+  it("rejects invalid and duplicate record ids", async () => {
+    const invalid = await workerRequest("/api/sources", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "Invalid ID",
+        name: "Invalid",
+        type: "local",
+        content: "trojan://password@example.com:443#Invalid",
+      }),
+    });
+    expect(invalid.status).toBe(400);
+
+    const invalidType = await workerRequest("/api/sources", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: "invalid-type", name: "Invalid", type: "file", content: "x" }),
+    });
+    expect(invalidType.status).toBe(400);
+
+    const invalidSourceIds = await workerRequest("/api/collections", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "invalid-source-ids",
+        name: "Invalid",
+        sourceIds: "all-source-a",
+        templateId: "mihomo-basic",
+      }),
+    });
+    expect(invalidSourceIds.status).toBe(400);
+
+    const duplicatePayload = JSON.stringify({
+      id: "duplicate-source",
+      name: "Duplicate",
+      type: "local",
+      content: "trojan://password@example.com:443#Duplicate",
+    });
+    const first = await workerRequest("/api/sources", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: duplicatePayload,
+    });
+    expect(first.status).toBe(200);
+
+    const duplicate = await workerRequest("/api/sources", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: duplicatePayload,
+    });
+    expect(duplicate.status).toBe(409);
   });
 
   it("serves code-owned built-ins and restores custom storage in one request", async () => {

@@ -3,9 +3,9 @@
   "deployment": {
     "workerName": "sub-store-cloudflare",
     "d1DatabaseName": "sub-store-cloudflare",
-    "adminHostname": "substore.example.com",
+    "adminHostname": "",
     "downloadHostname": "",
-    "downloadTargets": ["mihomo", "stash", "surge", "surge-mac", "surfboard", "loon", "egern", "shadowrocket", "qx", "sing-box", "v2ray", "uri", "json"]
+    "downloadTargets": ["mihomo", "sing-box", "uri"]
   },
   "sources": [
     {

@@ -16,3 +16,14 @@ export const getStoredAdminToken = () => {
   if (typeof window === 'undefined') return '';
   return localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || '';
 };
+
+export const setStoredAdminToken = (token: string) => {
+  if (typeof window === 'undefined') return;
+
+  const normalized = token.trim();
+  if (normalized) {
+    localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, normalized);
+  } else {
+    localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+  }
+};

@@ -64,6 +64,8 @@ pnpm run install:cloudflare
 - 验证 `/api/env`、`/api/templates`、`/api/sources`、`/api/collections` 和 collection 下载链接。
 - 打印 admin URL 和 collection download URLs。
 
+如果配置里没有 token，安装器会本地生成，并写回被 Git 忽略的 `config/agent-setup.local.json`。这样部署中途失败后可以安全重跑，不会因为 token 自动轮换导致前后不一致。HTTP 验证任一失败时命令会以非零状态退出，并打印当前进度和恢复命令；不要把仅完成 `wrangler deploy` 当成完整成功。
+
 如果没有 Cloudflare 账号或还没登录：
 
 ```bash
@@ -94,6 +96,10 @@ cp config/agent-setup.example.json config/agent-setup.local.json
 ```
 
 然后按 [../config/agent-setup.schema.json](../config/agent-setup.schema.json) 填写 `sources`、`collections`、`templates`。
+
+ID 统一使用 1–64 位小写字母、数字、下划线或连字符。组合订阅的 `sourceIds: []` 表示动态包含全部已启用订阅源；如果只想使用指定来源，请显式列出它们的 ID。
+
+需要复用指定 D1 时，可以在本地 setup 的 `deployment.d1DatabaseId` 填入 Cloudflare 返回的 UUID；该文件属于私有部署配置，不要提交。
 
 常用模板和过滤器预设见 [../config/rule-presets.json](../config/rule-presets.json)。
 
@@ -192,6 +198,7 @@ pnpm run deploy:config -- config/agent-setup.local.json cloudflare/wrangler.depl
 需要 Node.js 22 和 pnpm 11。
 
 ```bash
+pnpm run setup
 cp cloudflare/.dev.vars.example cloudflare/.dev.vars
 pnpm run build:frontend
 pnpm run dev
@@ -241,7 +248,7 @@ https://substore.example.com/download/source/<source-id>/uri?token=<download-tok
 
 ## 8. 备份与恢复
 
-管理界面的「我的」页面可以导出和恢复完整配置，包括订阅源、组合订阅、规则模板和请求设置。
+管理界面的「设置」页面可以导出和恢复完整配置，包括订阅源、组合订阅、规则模板和请求设置。
 
 也可以用 `Authorization` 请求头导出，避免把管理 token 放进 URL、浏览器历史或代理日志：
 

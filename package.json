@@ -72,9 +72,6 @@
       },
       "SUB_STORE_PUBLIC_DOWNLOAD_TOKEN": {
         "description": "Long random token for `/download/*` subscription links. Generate one with `openssl rand -base64 32`."
-      },
-      "SUB_STORE_BOOTSTRAP_SOURCE_CONTENT": {
-        "description": "Optional local node text used only for bootstrap scenarios. Leave empty for normal installs."
       }
     }
   },

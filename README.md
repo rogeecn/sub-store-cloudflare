@@ -66,7 +66,7 @@ https://<your-worker>.<your-subdomain>.workers.dev/?token=<admin-token>
 pnpm run install:cloudflare
 ```
 
-这个命令会检查 Cloudflare 登录、创建或复用 D1、生成本地部署配置、写入 Worker secrets、迁移 D1、部署 Worker、导入 `config/agent-setup.local.json`，最后验证并打印管理链接和下载链接。
+这个命令会校验本地配置、检查 Cloudflare 登录、创建或复用 D1、生成部署配置、写入 Worker secrets、迁移 D1、部署 Worker、导入 `config/agent-setup.local.json`，最后验证并打印管理链接和下载链接。没有填写 token 时，安装器会生成并保存到被 Git 忽略的本地配置中，失败后重跑不会自动轮换。
 
 如果还没有 Cloudflare 账号或没有登录 Wrangler，它会停下来并提示：
 
@@ -92,7 +92,7 @@ pnpm run install:cloudflare
 - 在网页里预览处理前后的节点列表，并校验本地节点内容。
 - 支持订阅流量信息、配置备份/恢复、远程订阅请求超时、User-Agent、透传 User-Agent 和并发参数。
 - 下载链接支持临时传入 `url`、`content` 和 `ua`，可以复用已有过滤器和模板做一次性格式转换。
-- 输出 Mihomo、Stash、Surge、Surge Mac、Surfboard、Loon、Egern、Shadowrocket、Quantumult X、sing-box、v2ray、URI 和 JSON。
+- 输出 Mihomo、Stash、Surge、Surfboard、Loon、Egern、Shadowrocket、Quantumult X、sing-box、v2ray、URI 和 JSON。
 - 使用 Worker Secrets 保护管理端和下载链接。
 
 这个项目聚焦“云端聚合 + 云端节点处理 + 云端规则模板 + 最终订阅输出”。核心循环是：添加订阅源，处理节点，组合订阅，套用规则模板，预览校验，复制下载链接。它不是完整 Sub-Store 的逐项复刻，也不是 Cloudflare 功能展示项目。
@@ -176,7 +176,9 @@ https://substore.example.com/download/source/<source-id>/sing-box?token=<downloa
 | Sources | 远程订阅 URL 或本地节点文本。 |
 | Collections | 多个 Sources 的组合订阅。 |
 | Filters | 节点包含、排除、正则删除、重命名、去重、排序、域名解析、旗帜和常用属性设置。 |
-| Templates | Mihomo / Stash / Surge Mac 的代理组、规则提供者和规则列表。 |
+| Templates | Mihomo / Stash 的代理组、规则提供者和规则列表。 |
+
+Source、Collection 和自定义 Template 的 ID 只能使用 1–64 位小写字母、数字、下划线或连字符。Collection 的 `sourceIds` 为空时表示包含全部已启用 Sources；如果只想包含指定来源，请显式列出 ID。
 
 输入格式：
 
@@ -186,7 +188,7 @@ https://substore.example.com/download/source/<source-id>/sing-box?token=<downloa
 
 输出格式：
 
-- Mihomo / Stash / Surge Mac：YAML 输出，支持模板里的代理组、规则提供者和规则列表。
+- Mihomo / Stash：YAML 输出，支持模板里的代理组、规则提供者和规则列表。
 - Surge / Surfboard / Loon / Quantumult X：常见文本节点格式输出。
 - Shadowrocket / URI：通用 URI 列表。
 - sing-box：基础 JSON 配置。
