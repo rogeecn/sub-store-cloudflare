@@ -1,13 +1,14 @@
 {
   "name": "sub-store-cloudflare",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "check": "tsc --noEmit",
+    "check": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest run",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --config wrangler.deploy.local.jsonc",
     "migrate:local": "wrangler d1 migrations apply sub-store-cloudflare --local --config wrangler.deploy.local.jsonc",
@@ -15,12 +16,15 @@
     "types": "wrangler types"
   },
   "dependencies": {
-    "hono": "^4.10.7",
+    "hono": "^4.12.28",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260620.0",
+    "@cloudflare/vitest-pool-workers": "^0.18.4",
+    "@cloudflare/workers-types": "^5.20260710.1",
+    "@types/node": "^22.18.0",
     "typescript": "^5.9.3",
-    "wrangler": "^4.93.0"
+    "vitest": "^4.1.10",
+    "wrangler": "^4.110.0"
   }
 }

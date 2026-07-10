@@ -3,8 +3,13 @@ export const ADMIN_TOKEN_STORAGE_KEY = 'substore_admin_token';
 export const syncAdminTokenFromUrl = () => {
   if (typeof window === 'undefined') return;
 
-  const token = new URLSearchParams(window.location.search).get('token');
-  if (token) localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get('token');
+  if (!token) return;
+
+  localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
+  url.searchParams.delete('token');
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
 };
 
 export const getStoredAdminToken = () => {

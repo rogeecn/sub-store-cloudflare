@@ -1,5 +1,12 @@
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 export { normalizeTarget, normalizeTargetAlias } from "./targets";
+import {
+  MAX_DOH_RESPONSE_BYTES,
+  MAX_REMOTE_SOURCE_RESPONSE_BYTES,
+  MAX_REMOTE_SOURCE_TOTAL_BYTES,
+  MAX_REMOTE_SOURCE_URLS,
+} from "./limits";
+import { readResponseText, utf8ByteLength } from "./read";
 import type {
   AppSettings,
   FilterRule,
@@ -132,12 +139,19 @@ async function loadSubscriptionRaw(sub: SubscriptionSource, settings?: AppSettin
 
   const urls = splitSourceUrls(sub.url);
   if (urls.length === 0) throw new Error(`Remote source ${sub.name} has no valid URL`);
+  if (urls.length > MAX_REMOTE_SOURCE_URLS) {
+    throw new Error(`Remote source ${sub.name} exceeds the ${MAX_REMOTE_SOURCE_URLS} URL limit`);
+  }
 
   const contents = await runWithConcurrency(
     urls.map((url) => async () => fetchSubscriptionUrl(url, sub, settings, requestUserAgent)),
     getRequestConcurrency(settings),
     getRequestConcurrencyWait(settings),
   );
+  const totalBytes = contents.reduce((total, content) => total + utf8ByteLength(content), 0);
+  if (totalBytes > MAX_REMOTE_SOURCE_TOTAL_BYTES) {
+    throw new Error(`Remote source ${sub.name} exceeds the ${MAX_REMOTE_SOURCE_TOTAL_BYTES / (1024 * 1024)} MiB combined limit`);
+  }
   return contents.map(decodeMaybeBase64).join("\n");
 }
 
@@ -158,7 +172,7 @@ async function fetchSubscriptionUrl(url: string, sub: SubscriptionSource, settin
       signal: controller.signal,
     });
     if (!response.ok) throw new Error(`Remote source ${sub.name} failed: ${response.status}`);
-    return response.text();
+    return readResponseText(response, MAX_REMOTE_SOURCE_RESPONSE_BYTES, `Remote source ${sub.name}`);
   } finally {
     clearTimeout(timeoutId);
   }
@@ -1158,7 +1172,7 @@ async function resolveHostname(hostname: string, filter: FilterRule, settings?: 
       signal: controller.signal,
     });
     if (!response.ok) return "";
-    const payload = (await response.json()) as { Answer?: Array<{ type?: number; data?: string }> };
+    const payload = parseDnsResponse(await readResponseText(response, MAX_DOH_RESPONSE_BYTES, "DNS response"));
     const answerType = recordType === "AAAA" ? 28 : 1;
     return (payload.Answer || [])
       .map((answer) => (answer.type === answerType ? String(answer.data || "") : ""))
@@ -1166,6 +1180,21 @@ async function resolveHostname(hostname: string, filter: FilterRule, settings?: 
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+function parseDnsResponse(text: string) {
+  const payload: unknown = JSON.parse(text);
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return { Answer: [] };
+  const answers = Reflect.get(payload, "Answer");
+  if (!Array.isArray(answers)) return { Answer: [] };
+  return {
+    Answer: answers.flatMap((answer) => {
+      if (!answer || typeof answer !== "object" || Array.isArray(answer)) return [];
+      const type = Reflect.get(answer, "type");
+      const data = Reflect.get(answer, "data");
+      return [{ type: typeof type === "number" ? type : undefined, data: typeof data === "string" ? data : undefined }];
+    }),
+  };
 }
 
 function getResolveEndpoint(filter: FilterRule, hostname: string, recordType: "A" | "AAAA") {

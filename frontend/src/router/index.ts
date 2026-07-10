@@ -7,7 +7,6 @@ import AppLayout from '@/layout/AppLayout.vue';
 import { useGlobalStore } from '@/store/global';
 import { useSubsStore } from '@/store/subs';
 import { initStores } from '@/utils/initApp';
-import My from '@/views/My.vue';
 
 import Sub from '@/views/Sub.vue';
 
@@ -95,7 +94,7 @@ const router = createRouter({
         },
         {
           path: '/my',
-          component: My,
+          component: () => import('@/views/My.vue'),
           meta: {
             title: 'my',
             needTabBar: true,

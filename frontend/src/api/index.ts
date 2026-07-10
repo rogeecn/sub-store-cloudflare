@@ -1,5 +1,5 @@
 import { useAppNotifyStore } from '@/store/appNotify';
-import axios, { AxiosError, AxiosPromise, AxiosResponse } from 'axios';
+import axios, { AxiosError } from 'axios';
 import i18n from '@/locales';
 import { getHostAPIUrl } from '@/hooks/useHostAPI';
 import { getStoredAdminToken } from '@/utils/adminToken';
@@ -92,25 +92,22 @@ const service = axios.create({
 service.interceptors.request.use(config => {
   const token = getStoredAdminToken();
   if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
-    config.headers['X-Sub-Store-Token'] = token;
+    config.headers.set('Authorization', `Bearer ${token}`);
+    config.headers.set('X-Sub-Store-Token', token);
   }
   return config;
 });
 
 service.interceptors.response.use(
-  (response: AxiosResponse<SucceedResponse>): AxiosPromise<SucceedResponse> => {
-    return Promise.resolve(response);
-  },
-  (e: AxiosError<ErrorResponse>): AxiosPromise<ErrorResponse | undefined> => {
+  response => response,
+  (e: AxiosError<ErrorResponse>) => {
     const requestUrl = e.config?.url || '';
 
     if (isCanceledRequestError(e))
       return Promise.reject(e);
 
     // 流量信息接口的报错,不通知，直接返回
-    if (requestUrl.startsWith('/api/source/flow') || requestUrl.startsWith('https://api.github.com/'))
+    if (requestUrl.startsWith('/api/source/flow'))
       return Promise.resolve(e.response);
 
     if (!appNotifyStore)
@@ -126,14 +123,14 @@ service.interceptors.response.use(
         ].join('\n'),
         ...notifyConfig,
       });
-      return Promise.reject(e.response || e);
+      return Promise.reject(e);
     } else {
       appNotifyStore.showNotify({
         title: getResponseTitle(e),
         content: getResponseContent(e),
         ...notifyConfig,
       });
-      return Promise.resolve(e.response);
+      return Promise.reject(e);
     }
   }
 );

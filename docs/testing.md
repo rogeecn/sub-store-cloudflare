@@ -10,7 +10,7 @@ Use this during development:
 pnpm run check
 ```
 
-It runs the Worker TypeScript check and the frontend locale/build check.
+It runs Worker and test TypeScript checks plus the frontend locale/build check.
 
 ## Release Gate
 
@@ -24,7 +24,11 @@ pnpm run deploy:dry-run
 `check:release` covers:
 
 - Worker TypeScript.
+- Worker test TypeScript.
+- Workers runtime and D1 migration integration tests.
 - Frontend locales and production build.
+- Frontend and Worker production dependency audits.
+- Real `wrangler dev` startup and response-header smoke testing.
 - Agent setup validation.
 - Seed SQL rendering.
 - Local Wrangler deploy config rendering.
@@ -40,6 +44,9 @@ pnpm run deploy:dry-run
 
 ```bash
 pnpm run check:worker
+pnpm run check:tests
+pnpm run check:audit
+pnpm run check:runtime
 pnpm run check:frontend
 pnpm run check:agent
 pnpm run check:worker-contract
@@ -47,6 +54,8 @@ pnpm run check:docs
 pnpm run check:open-source
 pnpm run check:history -- main
 ```
+
+The Worker tests run through Cloudflare's Vitest integration, apply the real D1 migrations, and dispatch requests to the actual Worker entrypoint. They cover auth, security headers, code-owned built-in templates, storage restore, download rendering, parsers, and payload limits.
 
 ## Deployment Doctor
 

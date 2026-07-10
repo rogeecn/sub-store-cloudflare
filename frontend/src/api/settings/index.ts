@@ -16,6 +16,13 @@ export function useSettingsApi() {
         data,
       });
     },
+    downloadBackup: (): AxiosPromise<Blob> => {
+      return request<Blob>({
+        url: '/api/storage',
+        method: 'get',
+        responseType: 'blob',
+      });
+    },
     restoreSettings: (data: StoragePostData): AxiosPromise<MyAxiosRes> => {
       return request({
         url: '/api/storage',

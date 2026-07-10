@@ -86,7 +86,6 @@ function main() {
     downloadToken,
     workerName,
     d1DatabaseName,
-    databaseId,
     sources: setup.sources || [],
     collections: setup.collections || [],
     downloadTargets,
@@ -112,7 +111,7 @@ function readSetup() {
 function ensureD1(name) {
   const existing = findD1(name);
   if (existing?.uuid) {
-    info(`Using existing D1 database ${name} (${existing.uuid}).`);
+    info(`Using existing D1 database ${name}.`);
     return existing.uuid;
   }
 
@@ -170,12 +169,12 @@ function verifyDeployment({ baseUrl, adminToken, downloadToken, collections }) {
   const checks = [];
   const adminPaths = ["/api/env", "/api/templates", "/api/sources", "/api/collections"];
   for (const path of adminPaths) {
-    checks.push(fetchCheck(`${baseUrl}${path}?token=${encodeURIComponent(adminToken)}`, path));
+    checks.push(fetchCheck(`${baseUrl}${path}`, path, adminToken));
   }
 
   const collectionId = collections.map((collection) => stringValue(collection.id || collection.name)).find(Boolean);
   if (collectionId) {
-    checks.push(fetchCheck(`${baseUrl}/api/link/collection/${encodeURIComponent(collectionId)}?token=${encodeURIComponent(adminToken)}`, `/api/link/collection/${collectionId}`));
+    checks.push(fetchCheck(`${baseUrl}/api/link/collection/${encodeURIComponent(collectionId)}`, `/api/link/collection/${collectionId}`, adminToken));
     checks.push(fetchCheck(`${baseUrl}/download/collection/${encodeURIComponent(collectionId)}/mihomo?token=${encodeURIComponent(downloadToken)}`, `/download/collection/${collectionId}/mihomo`));
   }
 
@@ -186,8 +185,11 @@ function verifyDeployment({ baseUrl, adminToken, downloadToken, collections }) {
   };
 }
 
-function fetchCheck(url, label) {
-  const result = spawnSync("curl", ["-fsS", "--max-time", "30", url], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+function fetchCheck(url, label, bearerToken = "") {
+  const args = ["-fsS", "--max-time", "30"];
+  if (bearerToken) args.push("--header", `Authorization: Bearer ${bearerToken}`);
+  args.push(url);
+  const result = spawnSync("curl", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   if (result.status === 0) {
     info(`Verified ${label}.`);
     return { label, ok: true };
@@ -226,10 +228,10 @@ function parseWorkersDevSubdomain() {
   return match?.[1] || "";
 }
 
-function printResult({ baseUrl, adminToken, downloadToken, workerName, d1DatabaseName, databaseId, sources, collections, downloadTargets, verification }) {
+function printResult({ baseUrl, adminToken, downloadToken, workerName, d1DatabaseName, sources, collections, downloadTargets, verification }) {
   banner("Deployment result");
   console.log(`Worker: ${workerName}`);
-  console.log(`D1: ${d1DatabaseName} (${databaseId})`);
+  console.log(`D1: ${d1DatabaseName}`);
   console.log(`Admin URL: ${baseUrl}/?token=${adminToken}`);
   console.log("");
   console.log("Download URLs:");
@@ -249,8 +251,18 @@ function printResult({ baseUrl, adminToken, downloadToken, workerName, d1Databas
   console.log("");
   console.log("Privacy check:");
   run("git", ["status", "--short"], { label: "git status --short", passthrough: true, soft: true });
+  verifyPrivatePaths();
   console.log("");
   info(`Private local files remain ignored: ${SETUP_PATH}, ${LOCAL_WRANGLER_PATH}, ${SEED_SQL_PATH}.`);
+}
+
+function verifyPrivatePaths() {
+  for (const path of [SETUP_PATH, LOCAL_WRANGLER_PATH, SEED_SQL_PATH]) {
+    const tracked = spawnSync("git", ["ls-files", "--error-unmatch", path], { stdio: "ignore" });
+    if (tracked.status === 0) fail(`Privacy check failed: ${path} is tracked by git.`);
+    const ignored = spawnSync("git", ["check-ignore", "-q", path], { stdio: "ignore" });
+    if (ignored.status !== 0) fail(`Privacy check failed: ${path} is not covered by .gitignore.`);
+  }
 }
 
 function checkWranglerLogin({ soft }) {

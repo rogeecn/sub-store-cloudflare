@@ -1,5 +1,3 @@
-import type { Component } from 'vue';
-
 import jsonIcon from '@/assets/icons/json.svg';
 import uriIcon from '@/assets/icons/uri.svg';
 import v2rayIcon from '@/assets/icons/v2ray.png';
@@ -34,7 +32,7 @@ export type TemplateTarget = 'mihomo' | 'stash' | 'surge-mac';
 export type SubscriptionTargetOption<T extends string = string> = {
   value: T;
   label: string;
-  icon?: string | Component;
+  icon?: string;
 };
 
 export const DOWNLOAD_TARGET_OPTIONS: SubscriptionTargetOption<DownloadTarget>[] = [

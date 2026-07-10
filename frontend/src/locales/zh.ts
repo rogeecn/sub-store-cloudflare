@@ -699,6 +699,9 @@ export default {
       delete: "删除"
     },
     notify: {
+      backup: {
+        failedWithError: "备份失败\n{e}"
+      },
       save: {
         succeed: "保存成功",
         failed: "保存失败",

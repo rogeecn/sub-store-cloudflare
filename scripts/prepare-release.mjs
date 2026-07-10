@@ -5,7 +5,7 @@ const version = process.argv.slice(2).filter((arg) => arg !== "--")[0];
 
 if (!version || !/^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version)) {
   console.error("Usage: node scripts/prepare-release.mjs <version>");
-  console.error("Example: node scripts/prepare-release.mjs v0.1.0");
+  console.error("Example: node scripts/prepare-release.mjs v0.2.0");
   process.exit(1);
 }
 

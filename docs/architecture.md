@@ -32,7 +32,7 @@ Cloudflare Worker
 | --- | --- |
 | `sources` | 保存远程订阅 URL 或本地节点文本。 |
 | `collections` | 保存订阅源组合、过滤器和默认模板。 |
-| `templates` | 保存规则模板，包括代理组、规则提供者和规则列表。 |
+| `templates` | 只保存用户创建的规则模板。内置模板由 Worker 代码维护。 |
 | `app_settings` | 保存远程订阅请求参数、主题和必要的前端默认状态。 |
 
 ## 输出流程
@@ -67,7 +67,7 @@ Cloudflare Worker
 
 ## 输入与核心能力
 
-远程订阅只负责拉取 `http(s)` URL，多个 URL 可以按行填写并合并。本地订阅支持单行 URI、Mihomo YAML、JSON 代理数组、常见 Surge/Loon/Quantumult X 单行节点和完整 Base64 内容。常用 URI 包括 `ss`、`ssr`、`vmess`、`vless`、`trojan`、`hysteria`、`hysteria2`、`tuic`、`anytls`、`http`、`socks5`、`wireguard`。
+远程订阅只负责拉取 `http(s)` URL，最多 8 个 URL 可以按行填写并合并；单个响应上限 2 MiB，合计上限 12 MiB。本地订阅支持单行 URI、Mihomo YAML、JSON 代理数组、常见 Surge/Loon/Quantumult X 单行节点和完整 Base64 内容。常用 URI 包括 `ss`、`ssr`、`vmess`、`vless`、`trojan`、`hysteria`、`hysteria2`、`tuic`、`anytls`、`http`、`socks5`、`wireguard`。管理 API 请求体上限是 4 MiB，流量信息和 DoH 响应分别限制在 64 KiB。
 
 这版保留的核心能力是：
 
@@ -113,7 +113,7 @@ Cloudflare Worker
 
 ## Templates
 
-模板保存在 D1，只应用于 Mihomo、Stash 和 Surge Mac 这类 YAML 输出。导入接口接受 JSON 或 YAML；常见 Mihomo YAML 键名会归一化成内部配置。
+内置模板由 Worker 代码直接维护，因此升级 Worker 后现有部署会立即获得模板修正，不需要重复 seed。用户自定义模板保存在 D1。模板只应用于 Mihomo、Stash 和 Surge Mac 这类 YAML 输出。导入接口接受 JSON 或 YAML；常见 Mihomo YAML 键名会归一化成内部配置。
 
 - `mixedPort`
 - `mixed-port`

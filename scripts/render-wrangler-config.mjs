@@ -1,13 +1,17 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 const args = process.argv.slice(2).filter((arg) => arg !== "--");
 const options = parseOptions(args);
 const [inputArg = "config/agent-setup.local.json", outputArg = "cloudflare/wrangler.deploy.local.jsonc"] = options.positionals;
-const input = JSON.parse(readFileSync(resolve(inputArg), "utf8"));
+const existingConfig = readJsonFile(outputArg);
+const input = readSetupInput(inputArg, existingConfig);
 const deployment = input.deployment && typeof input.deployment === "object" ? input.deployment : {};
 
-const databaseId = options.databaseId || process.env.CLOUDFLARE_D1_DATABASE_ID || deployment.d1DatabaseId;
+const databaseId = options.databaseId
+  || process.env.CLOUDFLARE_D1_DATABASE_ID
+  || deployment.d1DatabaseId
+  || existingConfig?.d1_databases?.[0]?.database_id;
 if (!databaseId) {
   throw new Error("D1 database id is required. Pass --database-id <id> or set CLOUDFLARE_D1_DATABASE_ID.");
 }
@@ -16,6 +20,7 @@ const workerName = stringValue(deployment.workerName, "sub-store-cloudflare");
 const databaseName = stringValue(deployment.d1DatabaseName, "sub-store-cloudflare");
 const downloadHostname = stringValue(deployment.downloadHostname, "");
 const adminHostname = stringValue(deployment.adminHostname, "");
+const appName = stringValue(existingConfig?.vars?.SUB_STORE_APP_NAME, "Sub-Store Cloudflare");
 const routes = [];
 
 if (adminHostname && !adminHostname.endsWith(".workers.dev")) {
@@ -29,8 +34,9 @@ const config = {
   $schema: "./node_modules/wrangler/config-schema.json",
   name: workerName,
   main: "src/index.ts",
-  workers_dev: true,
-  compatibility_date: "2026-06-10",
+  workers_dev: routes.length === 0,
+  compatibility_date: "2026-07-08",
+  compatibility_flags: ["nodejs_compat"],
   assets: {
     directory: "../frontend/dist",
     binding: "ASSETS",
@@ -53,7 +59,7 @@ const config = {
     },
   ],
   vars: {
-    SUB_STORE_APP_NAME: "Sub-Store Cloudflare",
+    SUB_STORE_APP_NAME: appName,
     SUB_STORE_PUBLIC_DOWNLOAD_HOSTS: downloadHostname,
   },
   ...(routes.length > 0 ? { routes } : {}),
@@ -69,7 +75,6 @@ console.log(
       output: outputArg,
       workerName,
       databaseName,
-      databaseId,
       routes: routes.length,
     },
     null,
@@ -95,4 +100,36 @@ function parseOptions(input) {
 function stringValue(value, fallback) {
   if (typeof value === "string" && value.trim()) return value.trim();
   return fallback;
+}
+
+function readJsonFile(path) {
+  try {
+    return JSON.parse(readFileSync(resolve(path), "utf8"));
+  } catch {
+    return undefined;
+  }
+}
+
+function readSetupInput(path, existing) {
+  if (existsSync(resolve(path))) return JSON.parse(readFileSync(resolve(path), "utf8"));
+  if (!existing) throw new Error(`Setup input is missing: ${path}`);
+
+  const downloadHostname = stringValue(existing?.vars?.SUB_STORE_PUBLIC_DOWNLOAD_HOSTS, "")
+    .split(",")
+    .map((host) => host.trim())
+    .find(Boolean) || "";
+  const routeHostnames = Array.isArray(existing.routes)
+    ? existing.routes.map((route) => stringValue(route?.pattern, "")).filter(Boolean)
+    : [];
+  const adminHostname = routeHostnames.find((hostname) => hostname !== downloadHostname) || "";
+
+  console.log(`${path}: missing; preserving deployment values from the existing ignored Wrangler config.`);
+  return {
+    deployment: {
+      workerName: stringValue(existing.name, "sub-store-cloudflare"),
+      d1DatabaseName: stringValue(existing?.d1_databases?.[0]?.database_name, "sub-store-cloudflare"),
+      adminHostname,
+      downloadHostname,
+    },
+  };
 }

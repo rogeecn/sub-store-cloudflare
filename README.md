@@ -141,8 +141,8 @@ pnpm --dir cloudflare exec wrangler login
 pnpm --dir cloudflare exec wrangler d1 create sub-store-cloudflare
 cp config/agent-setup.example.json config/agent-setup.local.json
 pnpm run deploy:config -- config/agent-setup.local.json cloudflare/wrangler.deploy.local.jsonc --database-id <database-id>
-pnpm --dir cloudflare exec wrangler secret put SUB_STORE_ADMIN_TOKEN
-pnpm --dir cloudflare exec wrangler secret put SUB_STORE_PUBLIC_DOWNLOAD_TOKEN
+pnpm --dir cloudflare exec wrangler secret put SUB_STORE_ADMIN_TOKEN --config wrangler.deploy.local.jsonc
+pnpm --dir cloudflare exec wrangler secret put SUB_STORE_PUBLIC_DOWNLOAD_TOKEN --config wrangler.deploy.local.jsonc
 pnpm run migrate:remote
 pnpm run deploy:local
 ```
@@ -209,7 +209,7 @@ pnpm run check:release
 pnpm run deploy:dry-run
 ```
 
-这两个命令是本仓库的本地发布 gate：检查 Worker、构建前端、验证 agent seed / deploy config / Worker contract，并扫描当前文件和 `main` 历史里的常见发布风险。仓库不使用 GitHub Actions 或 Dependabot。
+这两个命令是本仓库的本地发布 gate：检查 Worker 和测试类型、运行 Workers/D1 集成测试、构建前端、审计生产依赖、启动真实本地 Worker、验证 agent seed / deploy config / Worker contract，并扫描当前文件和 `main` 历史里的常见发布风险。仓库不使用 GitHub Actions 或 Dependabot。
 
 ## Star History
 

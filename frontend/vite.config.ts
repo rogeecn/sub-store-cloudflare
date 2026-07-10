@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 import { ConfigEnv, defineConfig, loadEnv } from "vite";
 import { createStyleImportPlugin } from "vite-plugin-style-import";
 import { createSvgIconsPlugin } from "vite-plugin-svg-icons";
-import viteCompression from "vite-plugin-compression";
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 const version = JSON.parse(
@@ -53,13 +52,6 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
         iconDirs: [resolve(projectRoot, "src/assets/icons")],
         symbolId: "icon-[dir]-[name]",
         customDomId: "__svg__icons__dom__",
-      }),
-      viteCompression({
-        // verbose: true,
-        // disable: false,
-        threshold: 10240,
-        // algorithm: 'gzip',
-        // ext: '.gz'
       }),
     ],
     root: projectRoot,
@@ -120,8 +112,8 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
         scss: {
           // 配置 自定义覆盖主题 和 nutui 全局 scss 变量
           additionalData: `@import "@/assets/styles/custom_variables.scss";@import "@nutui/nutui/dist/styles/variables-jdt.scss";@import '@/assets/styles/mixins.scss';`,
-          // NutUI 3 和 Vite 3 仍依赖 Sass 已弃用的 API。
-          silenceDeprecations: ["import", "legacy-js-api"],
+          // NutUI 3 still ships legacy @import syntax; Vite 6 already uses Sass's modern API.
+          silenceDeprecations: ["import"],
         },
       },
     },

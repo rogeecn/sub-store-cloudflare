@@ -1,24 +1,26 @@
 import { Hono } from "hono";
 import { apiRoutes } from "./routes/api";
 import { downloadRoutes } from "./routes/download";
-import { applyCorsHeaders } from "./lib/http";
+import { applyCorsHeaders, applySecurityHeaders } from "./lib/http";
 import type { SubStoreEnv } from "./types";
 
 const app = new Hono<{ Bindings: SubStoreEnv }>();
 
 app.onError((error, c) => {
-  console.log({
+  console.error(JSON.stringify({
     level: "error",
+    method: c.req.method,
     route: c.req.path,
+    requestId: c.req.header("cf-ray") || undefined,
     message: error.message,
     stack: error.stack,
-  });
+  }));
   return c.json(
     {
       status: "failed",
       error: {
         code: 500,
-        message: error.message,
+        message: "Internal server error",
       },
     },
     500,
@@ -26,10 +28,8 @@ app.onError((error, c) => {
 });
 
 app.options("*", (c) => {
-  const origin = c.req.header("origin") || "";
   return new Response(null, {
     headers: {
-      "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
       "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Sub-Store-Token",
     },
@@ -70,6 +70,6 @@ export default {
     }
 
     const response = await app.fetch(request, env, ctx);
-    return applyCorsHeaders(response, request.headers.get("origin") || undefined);
+    return applySecurityHeaders(applyCorsHeaders(response, request.headers.get("origin") || undefined));
   },
-};
+} satisfies ExportedHandler<SubStoreEnv>;

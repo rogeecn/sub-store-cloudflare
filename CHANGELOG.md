@@ -6,10 +6,33 @@ This project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-10
+
 ### Added
 
-- Added governance, maintainer, roadmap, troubleshooting, and language policy documentation.
-- Added local documentation link checking via `pnpm run check:docs`.
+- Added Workers runtime and D1 migration integration tests for auth, storage restore, downloads, parsers, and payload limits.
+- Added a real `wrangler dev` startup smoke test and production dependency audits to the release gate.
+- Added bounded readers for API bodies, remote subscriptions, flow metadata, and DoH responses.
+
+### Changed
+
+- Moved built-in routing templates from D1 seed rows into Worker-owned code so template fixes reach existing deployments immediately.
+- Removed request-time schema creation and default seeding; D1 migrations are now the only schema path.
+- Consolidated the repository into one pnpm workspace and one root lockfile.
+- Updated Wrangler, Workers types, Hono, Axios, Vite, Vue tooling, TypeScript, and YAML dependencies.
+- Lazy-loaded the settings route and CodeMirror editor, and removed redundant precompression output.
+- Updated Wrangler compatibility settings to `2026-07-08` with `nodejs_compat` across all generated and checked configs.
+
+### Security
+
+- Added CSP, frame denial, no-referrer, no-sniff, and permissions-policy response headers.
+- Changed unhandled failures to structured server logs plus generic client-facing 500 responses.
+- Removed the admin token from the browser URL after ingest and changed backup export to authenticated blob download.
+- Stopped the installer from printing private D1 database IDs and strengthened ignored-file privacy verification.
+
+### Documentation
+
+- Documented the new runtime limits, code-owned template model, release checks, and header-authenticated backup export.
 
 ## [0.1.1] - 2026-06-28
 

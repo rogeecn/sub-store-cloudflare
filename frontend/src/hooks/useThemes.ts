@@ -12,19 +12,28 @@ const commonVariables = {
   'item-card-radios': '12px',
 };
 
+type ThemeDefinition = {
+  meta: {
+    name: string;
+    author: string;
+    label: 'light' | 'dark';
+    extend?: string;
+  };
+  colors: Record<string, string>;
+};
+
 // 获取主题文件夹内的主题
 const getThemeModules = () => {
-  const allThemes = {};
+  const allThemes: Record<string, ThemeDefinition> = {};
   // 读取主题文件内容
-  const modulesFiles = import.meta.globEager('@/themes/*.ts');
+  const modulesFiles = import.meta.glob<{ default: ThemeDefinition }>('@/themes/*.ts', { eager: true });
   const keys = Object.keys(modulesFiles);
 
   // 初始化为主题表，继承合并
   keys.forEach(path => {
     const paths = path.split('/');
     const modulesName = paths[paths.length - 1].replace('.ts', '');
-    // allThemes[modulesName] = modulesFiles[path]?.default;
-    allThemes[modulesName] = (modulesFiles[path] as any)?.default;
+    allThemes[modulesName] = modulesFiles[path].default;
 
   });
 

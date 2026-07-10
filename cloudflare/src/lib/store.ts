@@ -22,50 +22,6 @@ import type {
 
 type JsonObject = Record<string, unknown>;
 
-const SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS sources (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  type TEXT NOT NULL DEFAULT 'remote',
-  url TEXT NOT NULL DEFAULT '',
-  content TEXT NOT NULL DEFAULT '',
-  enabled INTEGER NOT NULL DEFAULT 1,
-  filters_json TEXT NOT NULL DEFAULT '[]',
-  meta_json TEXT NOT NULL DEFAULT '{}',
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS collections (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  source_ids_json TEXT NOT NULL DEFAULT '[]',
-  filters_json TEXT NOT NULL DEFAULT '[]',
-  template_id TEXT NOT NULL DEFAULT 'mihomo-basic',
-  ignore_failed INTEGER NOT NULL DEFAULT 1,
-  enabled INTEGER NOT NULL DEFAULT 1,
-  meta_json TEXT NOT NULL DEFAULT '{}',
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS templates (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  target TEXT NOT NULL DEFAULT 'mihomo',
-  config_json TEXT NOT NULL,
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS app_settings (
-  id TEXT PRIMARY KEY,
-  value_json TEXT NOT NULL DEFAULT '{}',
-  updated_at INTEGER NOT NULL
-);
-
-`;
-
 type SourceRow = {
   id: string;
   name: string;
@@ -109,19 +65,7 @@ type SettingsRow = {
 
 const SETTINGS_ID = "default";
 
-export async function ensureSchema(env: SubStoreEnv) {
-  const statements = SCHEMA_SQL.split(";")
-    .map((statement) => statement.trim())
-    .filter(Boolean);
-  for (const statement of statements) {
-    await env.DB.prepare(`${statement};`).run();
-  }
-  await migrateSchema(env);
-  await seedDefaults(env);
-}
-
 export async function getAppConfig(env: SubStoreEnv): Promise<AppConfig> {
-  await ensureSchema(env);
   const [sources, collections, templates, settings] = await Promise.all([
     listSources(env),
     listCollections(env),
@@ -137,7 +81,6 @@ export async function listSources(env: SubStoreEnv) {
 }
 
 export async function sortSources(env: SubStoreEnv, ids: string[]) {
-  await ensureSchema(env);
   const now = Date.now();
   const statements = ids.map((id, index) =>
     env.DB.prepare("UPDATE sources SET created_at = ?, updated_at = ? WHERE id = ?").bind(now + index, now, id),
@@ -147,7 +90,6 @@ export async function sortSources(env: SubStoreEnv, ids: string[]) {
 }
 
 export async function upsertSource(env: SubStoreEnv, input: Partial<SourceRecord>) {
-  await ensureSchema(env);
   const now = Date.now();
   const id = toId(input.id || input.name || "source");
   const existing = await getSource(env, id);
@@ -199,7 +141,6 @@ export async function getSource(env: SubStoreEnv, id: string) {
 }
 
 export async function deleteSource(env: SubStoreEnv, id: string) {
-  await ensureSchema(env);
   await env.DB.prepare("DELETE FROM sources WHERE id = ?").bind(id).run();
   return { deleted: true };
 }
@@ -210,7 +151,6 @@ export async function listCollections(env: SubStoreEnv) {
 }
 
 export async function sortCollections(env: SubStoreEnv, ids: string[]) {
-  await ensureSchema(env);
   const now = Date.now();
   const statements = ids.map((id, index) =>
     env.DB.prepare("UPDATE collections SET created_at = ?, updated_at = ? WHERE id = ?").bind(now + index, now, id),
@@ -220,7 +160,6 @@ export async function sortCollections(env: SubStoreEnv, ids: string[]) {
 }
 
 export async function upsertCollection(env: SubStoreEnv, input: Partial<CollectionRecord>) {
-  await ensureSchema(env);
   const now = Date.now();
   const id = toId(input.id || input.name || "collection");
   const existing = await getCollection(env, id);
@@ -272,20 +211,22 @@ export async function getCollection(env: SubStoreEnv, id: string) {
 }
 
 export async function deleteCollection(env: SubStoreEnv, id: string) {
-  await ensureSchema(env);
   await env.DB.prepare("DELETE FROM collections WHERE id = ?").bind(id).run();
   return { deleted: true };
 }
 
 export async function listTemplates(env: SubStoreEnv) {
   const rows = await env.DB.prepare("SELECT * FROM templates ORDER BY created_at ASC").all<TemplateRow>();
-  return rows.results.map(templateFromRow);
+  const custom = rows.results
+    .filter((row) => !BUILTIN_TEMPLATE_IDS.has(row.id))
+    .map(templateFromRow);
+  return [...BUILTIN_TEMPLATES.map(builtinTemplateRecord), ...custom];
 }
 
 export async function upsertTemplate(env: SubStoreEnv, input: Partial<TemplateRecord>) {
-  await ensureSchema(env);
   const now = Date.now();
   const id = toId(input.id || input.name || "template");
+  if (BUILTIN_TEMPLATE_IDS.has(id)) throw new Error("Built-in templates cannot be modified");
   const existing = await getTemplate(env, id);
   const template: TemplateRecord = {
     id,
@@ -311,19 +252,19 @@ export async function upsertTemplate(env: SubStoreEnv, input: Partial<TemplateRe
 }
 
 export async function getTemplate(env: SubStoreEnv, id: string) {
+  const builtin = BUILTIN_TEMPLATES.find((template) => template.id === id);
+  if (builtin) return builtinTemplateRecord(builtin);
   const row = await env.DB.prepare("SELECT * FROM templates WHERE id = ?").bind(id).first<TemplateRow>();
   return row ? templateFromRow(row) : undefined;
 }
 
 export async function deleteTemplate(env: SubStoreEnv, id: string) {
-  await ensureSchema(env);
   if (BUILTIN_TEMPLATE_IDS.has(id)) throw new Error("Built-in templates cannot be deleted");
   await env.DB.prepare("DELETE FROM templates WHERE id = ?").bind(id).run();
   return { deleted: true };
 }
 
 export async function getSettings(env: SubStoreEnv): Promise<AppSettings> {
-  await ensureSchema(env);
   return readSettings(env);
 }
 
@@ -333,7 +274,6 @@ async function readSettings(env: SubStoreEnv): Promise<AppSettings> {
 }
 
 export async function updateSettings(env: SubStoreEnv, next: AppSettings) {
-  await ensureSchema(env);
   const now = Date.now();
   const current = await readSettings(env);
   const settings = mergeDeep(current, next);
@@ -362,18 +302,20 @@ export async function exportStorage(env: SubStoreEnv) {
 }
 
 export async function importStorage(env: SubStoreEnv, input: unknown) {
-  await ensureSchema(env);
   const payload = normalizeStoragePayload(input);
-  await updateSettings(env, payload.settings);
-  for (const source of payload.sources) {
-    await upsertSource(env, source);
-  }
-  for (const template of payload.templates) {
-    await upsertTemplate(env, template);
-  }
-  for (const collection of payload.collections) {
-    await upsertCollection(env, collection);
-  }
+  const now = Date.now();
+  const settings = mergeDeep(await readSettings(env), payload.settings);
+  const statements: D1PreparedStatement[] = [
+    env.DB.prepare(
+      `INSERT INTO app_settings (id, value_json, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at`,
+    ).bind(SETTINGS_ID, JSON.stringify(settings), now),
+    ...sourceImportStatements(env, payload.sources, now),
+    ...templateImportStatements(env, payload.templates, now),
+    ...collectionImportStatements(env, payload.collections, now),
+  ];
+  await env.DB.batch(statements);
   return {
     restored: true,
     sources: payload.sources.length,
@@ -407,51 +349,116 @@ export async function getRoutingTemplate(env: SubStoreEnv, id: string | undefine
   return template ? { id: template.id, name: template.name, target: template.target, config: template.config } : undefined;
 }
 
-async function seedDefaults(env: SubStoreEnv) {
-  const now = Date.now();
-  for (const builtin of BUILTIN_TEMPLATES) {
-    const template = await env.DB.prepare("SELECT id FROM templates WHERE id = ?").bind(builtin.id).first<{ id: string }>();
-    if (!template) {
-      await env.DB.prepare(
-        "INSERT INTO templates (id, name, target, config_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-      )
-        .bind(builtin.id, builtin.name, builtin.target, JSON.stringify(builtin.config), now, now)
-        .run();
-    }
-  }
-
+export async function bootstrapFromEnv(env: SubStoreEnv) {
   const bootstrapContent = env.SUB_STORE_BOOTSTRAP_SOURCE_CONTENT || "";
-  if (bootstrapContent) {
-    const source = await env.DB.prepare("SELECT id FROM sources WHERE id = ?").bind(DEFAULT_SOURCE_ID).first<{ id: string }>();
-    if (!source) {
-      await env.DB.prepare(
-        "INSERT INTO sources (id, name, type, url, content, enabled, filters_json, meta_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      )
-        .bind(
-          DEFAULT_SOURCE_ID,
-          env.SUB_STORE_BOOTSTRAP_SOURCE_DISPLAY_NAME || "Bootstrap Source",
-          "local",
-          "",
-          bootstrapContent,
-          1,
-          "[]",
-          "{}",
-          now,
-          now,
-        )
-        .run();
-    }
-  }
+  if (!bootstrapContent) return;
+  const now = Date.now();
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT OR IGNORE INTO sources
+       (id, name, type, url, content, enabled, filters_json, meta_json, created_at, updated_at)
+       VALUES (?, ?, 'local', '', ?, 1, '[]', '{}', ?, ?)`,
+    ).bind(DEFAULT_SOURCE_ID, env.SUB_STORE_BOOTSTRAP_SOURCE_DISPLAY_NAME || "Bootstrap Source", bootstrapContent, now, now),
+    env.DB.prepare(
+      `INSERT OR IGNORE INTO collections
+       (id, name, source_ids_json, filters_json, template_id, ignore_failed, enabled, meta_json, created_at, updated_at)
+       VALUES (?, 'Daily', ?, '[]', ?, 1, 1, '{}', ?, ?)`,
+    ).bind(DEFAULT_COLLECTION_ID, JSON.stringify([DEFAULT_SOURCE_ID]), DEFAULT_TEMPLATE_ID, now, now),
+  ]);
+}
 
-  const collection = await env.DB.prepare("SELECT id FROM collections WHERE id = ?").bind(DEFAULT_COLLECTION_ID).first<{ id: string }>();
-  if (!collection) {
-    await env.DB.prepare(
-      "INSERT INTO collections (id, name, source_ids_json, filters_json, template_id, ignore_failed, enabled, meta_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    )
-      .bind(DEFAULT_COLLECTION_ID, "Daily", bootstrapContent ? JSON.stringify([DEFAULT_SOURCE_ID]) : "[]", "[]", DEFAULT_TEMPLATE_ID, 1, 1, "{}", now, now)
-      .run();
-  }
+function builtinTemplateRecord(template: (typeof BUILTIN_TEMPLATES)[number]): TemplateRecord {
+  return {
+    ...template,
+    createdAt: 0,
+    updatedAt: 0,
+  };
+}
 
+function sourceImportStatements(env: SubStoreEnv, sources: Partial<SourceRecord>[], now: number) {
+  return sources.map((input, index) => {
+    const id = toId(input.id || input.name || "source");
+    return env.DB.prepare(
+      `INSERT INTO sources
+       (id, name, type, url, content, enabled, filters_json, meta_json, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         type = excluded.type,
+         url = excluded.url,
+         content = excluded.content,
+         enabled = excluded.enabled,
+         filters_json = excluded.filters_json,
+         meta_json = excluded.meta_json,
+         updated_at = excluded.updated_at`,
+    ).bind(
+      id,
+      stringValue(input.name, id),
+      input.type === "local" ? "local" : "remote",
+      stringValue(input.url, ""),
+      stringValue(input.content, ""),
+      boolInt(input.enabled !== false),
+      JSON.stringify(normalizeFilters(input.filters)),
+      JSON.stringify(normalizeMeta(input.meta)),
+      now + index,
+      now,
+    );
+  });
+}
+
+function templateImportStatements(env: SubStoreEnv, templates: Partial<TemplateRecord>[], now: number) {
+  return templates
+    .filter((input) => !BUILTIN_TEMPLATE_IDS.has(toId(input.id || input.name || "template")))
+    .map((input, index) => {
+      const id = toId(input.id || input.name || "template");
+      return env.DB.prepare(
+        `INSERT INTO templates (id, name, target, config_json, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           name = excluded.name,
+           target = excluded.target,
+           config_json = excluded.config_json,
+           updated_at = excluded.updated_at`,
+      ).bind(
+        id,
+        stringValue(input.name, id),
+        normalizeTargetValue(input.target),
+        JSON.stringify(parseConfig(input.config || DEFAULT_TEMPLATE_CONFIG)),
+        now + index,
+        now,
+      );
+    });
+}
+
+function collectionImportStatements(env: SubStoreEnv, collections: Partial<CollectionRecord>[], now: number) {
+  return collections.map((input, index) => {
+    const id = toId(input.id || input.name || "collection");
+    return env.DB.prepare(
+      `INSERT INTO collections
+       (id, name, source_ids_json, filters_json, template_id, ignore_failed, enabled, meta_json, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         source_ids_json = excluded.source_ids_json,
+         filters_json = excluded.filters_json,
+         template_id = excluded.template_id,
+         ignore_failed = excluded.ignore_failed,
+         enabled = excluded.enabled,
+         meta_json = excluded.meta_json,
+         updated_at = excluded.updated_at`,
+    ).bind(
+      id,
+      stringValue(input.name, id),
+      JSON.stringify(stringArray(input.sourceIds)),
+      JSON.stringify(normalizeFilters(input.filters)),
+      stringValue(input.templateId, DEFAULT_TEMPLATE_ID),
+      boolInt(input.ignoreFailed !== false),
+      boolInt(input.enabled !== false),
+      JSON.stringify(normalizeMeta(input.meta)),
+      now + index,
+      now,
+    );
+  });
 }
 
 function sourceFromRow(row: SourceRow): SourceRecord {
@@ -506,17 +513,6 @@ function collectionToSubscription(collection: CollectionRecord): SubscriptionCol
     enabled: collection.enabled,
     meta: collection.meta,
   };
-}
-
-async function migrateSchema(env: SubStoreEnv) {
-  await addColumnIfMissing(env, "sources", "meta_json", "TEXT NOT NULL DEFAULT '{}'");
-  await addColumnIfMissing(env, "collections", "meta_json", "TEXT NOT NULL DEFAULT '{}'");
-}
-
-async function addColumnIfMissing(env: SubStoreEnv, table: string, column: string, definition: string) {
-  const result = await env.DB.prepare(`PRAGMA table_info(${table})`).all<{ name: string }>();
-  if (result.results.some((row) => row.name === column)) return;
-  await env.DB.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
 }
 
 function normalizeFilters(value: unknown): FilterRule[] {

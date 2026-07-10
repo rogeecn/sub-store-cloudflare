@@ -699,6 +699,9 @@ export default {
       delete: "Delete"
     },
     notify: {
+      backup: {
+        failedWithError: "Backup failed\n{e}"
+      },
       save: {
         succeed: "Saved",
         failed: "Save failed",

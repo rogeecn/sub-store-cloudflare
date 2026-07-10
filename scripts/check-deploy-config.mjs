@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const args = process.argv.slice(2).filter((arg) => arg !== "--");
 const required = args.includes("--required");
@@ -15,8 +16,26 @@ if (!existsSync(configPath)) {
 
 const config = parseJsonc(readFileSync(configPath, "utf8"), configPath);
 const assets = config.assets;
-const expectedAssetDirectory = configPath === "wrangler.jsonc" ? "frontend/dist" : "../frontend/dist";
+const expectedAssetDirectory = resolve(configPath) === resolve("wrangler.jsonc") ? "frontend/dist" : "../frontend/dist";
 const findings = [];
+const rootConfig = readConfig("wrangler.jsonc");
+const workerConfig = readConfig("cloudflare/wrangler.jsonc");
+
+if (rootConfig.compatibility_date !== workerConfig.compatibility_date) {
+  findings.push("root and cloudflare compatibility_date values must match");
+}
+if (!sameStrings(rootConfig.compatibility_flags, workerConfig.compatibility_flags)) {
+  findings.push("root and cloudflare compatibility_flags values must match");
+}
+if (config.compatibility_date !== rootConfig.compatibility_date) {
+  findings.push(`compatibility_date must be "${rootConfig.compatibility_date}"`);
+}
+if (!sameStrings(config.compatibility_flags, rootConfig.compatibility_flags)) {
+  findings.push(`compatibility_flags must match root config (${stringList(rootConfig.compatibility_flags).join(", ")})`);
+}
+if (!stringList(config.compatibility_flags).includes("nodejs_compat")) {
+  findings.push('compatibility_flags must include "nodejs_compat"');
+}
 
 if (!assets || typeof assets !== "object") {
   findings.push("assets config is missing");
@@ -50,6 +69,22 @@ function parseJsonc(text, file) {
     console.error(`${file}: invalid JSONC: ${error.message}`);
     process.exit(1);
   }
+}
+
+function readConfig(path) {
+  if (!existsSync(path)) {
+    console.error(`${path}: missing canonical Wrangler config`);
+    process.exit(1);
+  }
+  return parseJsonc(readFileSync(path, "utf8"), path);
+}
+
+function stringList(input) {
+  return Array.isArray(input) ? input.map(String).sort() : [];
+}
+
+function sameStrings(left, right) {
+  return JSON.stringify(stringList(left)) === JSON.stringify(stringList(right));
 }
 
 function stripJsonComments(input) {

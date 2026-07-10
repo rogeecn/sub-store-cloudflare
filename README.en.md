@@ -115,8 +115,8 @@ pnpm --dir cloudflare exec wrangler login
 pnpm --dir cloudflare exec wrangler d1 create sub-store-cloudflare
 cp config/agent-setup.example.json config/agent-setup.local.json
 pnpm run deploy:config -- config/agent-setup.local.json cloudflare/wrangler.deploy.local.jsonc --database-id <database-id>
-pnpm --dir cloudflare exec wrangler secret put SUB_STORE_ADMIN_TOKEN
-pnpm --dir cloudflare exec wrangler secret put SUB_STORE_PUBLIC_DOWNLOAD_TOKEN
+pnpm --dir cloudflare exec wrangler secret put SUB_STORE_ADMIN_TOKEN --config wrangler.deploy.local.jsonc
+pnpm --dir cloudflare exec wrangler secret put SUB_STORE_PUBLIC_DOWNLOAD_TOKEN --config wrangler.deploy.local.jsonc
 pnpm run migrate:remote
 pnpm run deploy:local
 ```
@@ -130,7 +130,7 @@ pnpm run check:release
 pnpm run deploy:dry-run
 ```
 
-These local commands are the release gate. The upstream repository intentionally does not use GitHub Actions or Dependabot.
+These local commands are the release gate. They cover Worker and test types, Workers/D1 integration tests, the frontend production build, production dependency audits, a real local Worker startup smoke test, deploy contracts, and privacy checks. The upstream repository intentionally does not use GitHub Actions or Dependabot.
 
 ## Acknowledgements
 

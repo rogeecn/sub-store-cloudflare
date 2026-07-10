@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { failed, isTokenValid } from "../lib/http";
 import { buildSubscription, getTargetContentType, normalizeTarget, normalizeTargetAlias } from "../lib/subscription";
-import { ensureSchema, getRoutingTemplate, getSettings, getSource, getSubscriptionCollection, getSubscriptionSources } from "../lib/store";
+import { bootstrapFromEnv, getRoutingTemplate, getSettings, getSource, getSubscriptionCollection, getSubscriptionSources } from "../lib/store";
 import type { SubscriptionCollection, SubscriptionSource, SubStoreEnv, SubscriptionTarget } from "../types";
 
 export const downloadRoutes = new Hono<{ Bindings: SubStoreEnv }>();
@@ -15,7 +15,7 @@ downloadRoutes.get("/download/collection/:name/:target?/:token?", async (c) => {
   const target = getDownloadTarget(c);
   if (!target) return failed(c, "Unsupported target", 400);
 
-  await ensureSchema(c.env);
+  await bootstrapFromEnv(c.env);
   const collection = await getSubscriptionCollection(c.env, c.req.param("name"));
   if (!collection) return failed(c, "Collection not found", 404);
 
@@ -33,11 +33,19 @@ downloadRoutes.get("/download/source/:name/:target?/:token?", async (c) => {
   const target = getDownloadTarget(c);
   if (!target) return failed(c, "Unsupported target", 400);
 
-  await ensureSchema(c.env);
+  await bootstrapFromEnv(c.env);
   const source = await getSource(c.env, c.req.param("name"));
   if (!source || !source.enabled) return failed(c, "Subscription not found", 404);
-  const subscriptionSource = (await getSubscriptionSources(c.env)).find((item) => item.id === source.id);
-  if (!subscriptionSource) return failed(c, "Subscription not found", 404);
+  const subscriptionSource: SubscriptionSource = {
+    id: source.id,
+    name: source.name,
+    type: source.type,
+    url: source.url,
+    content: source.content,
+    filters: source.filters,
+    enabled: source.enabled,
+    meta: source.meta,
+  };
 
   return renderDownload(c, {
     source: subscriptionSource,
@@ -59,8 +67,10 @@ async function renderDownload(
   const sourceOverride = getTemporarySourceOverride(c);
   const sources = sourceOverride ? applyTemporarySourceOverride(options.sources, sourceOverride, options.collection) : options.sources;
   const source = sourceOverride && options.source ? applyTemporarySourceOverride([options.source], sourceOverride)[0] : options.source;
-  const template = await getRoutingTemplate(c.env, options.templateId);
-  const settings = await getSettings(c.env);
+  const [template, settings] = await Promise.all([
+    getRoutingTemplate(c.env, options.templateId),
+    getSettings(c.env),
+  ]);
   try {
     const body = await buildSubscription({
       source,

@@ -35,6 +35,8 @@ openssl rand -base64 32
 https://<worker>.<workers-subdomain>.workers.dev/?token=<admin-token>
 ```
 
+前端读取管理 token 后会立即从地址栏移除它，后续 API 请求使用 `Authorization` 请求头。
+
 然后在网页管理界面里添加订阅源、组合订阅和模板。
 
 按钮部署的定位是“最快跑起来”。它不会读取你的本地 `config/agent-setup.local.json`，也不会把订阅源写进 GitHub。
@@ -241,10 +243,13 @@ https://substore.example.com/download/source/<source-id>/uri?token=<download-tok
 
 管理界面的「我的」页面可以导出和恢复完整配置，包括订阅源、组合订阅、规则模板和请求设置。
 
-也可以直接访问：
+也可以用 `Authorization` 请求头导出，避免把管理 token 放进 URL、浏览器历史或代理日志：
 
-```text
-https://substore.example.com/api/storage?token=<admin-token>
+```bash
+curl -fsS \
+  --header "Authorization: Bearer <admin-token>" \
+  https://substore.example.com/api/storage \
+  --output sub-store-cloudflare-backup.json
 ```
 
 恢复入口是 `POST /api/storage`，请求体可以是完整备份 JSON，也可以是 `{ "content": "<backup-json>" }`。
@@ -259,7 +264,10 @@ pnpm run deploy:dry-run
 它会执行：
 
 - Worker TypeScript 检查。
+- Workers/D1 集成测试与测试代码类型检查。
 - 前端生产构建。
+- 前后端生产依赖审计。
+- 真实 `wrangler dev` 启动 smoke test。
 - Agent setup / seed / deploy config 检查。
 - Worker contract 检查。
 - 当前文件发布风险扫描。

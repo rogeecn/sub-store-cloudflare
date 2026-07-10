@@ -1,21 +1,26 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { parse as parseYaml } from "yaml";
 import { failed, requireAdmin, success } from "../lib/http";
 import { BUILTIN_TEMPLATE_IDS } from "../lib/defaults";
+import { MAX_API_BODY_BYTES, MAX_FLOW_RESPONSE_BYTES } from "../lib/limits";
+import { readResponseText } from "../lib/read";
 import {
   deleteCollection,
   deleteSource,
   deleteTemplate,
-  ensureSchema,
+  bootstrapFromEnv,
   exportStorage,
-  getAppConfig,
   getCollection,
   getSettings,
   getSource,
   getSubscriptionSources,
   getTemplate,
   importStorage,
+  listCollections,
+  listSources,
+  listTemplates,
   sortCollections,
   sortSources,
   updateSettings,
@@ -44,9 +49,16 @@ const FRONTEND_VERSION = "2.17.35";
 apiRoutes.use("*", async (c, next) => {
   const invalid = await requireAdmin(c);
   if (invalid) return invalid;
-  await ensureSchema(c.env);
+  await bootstrapFromEnv(c.env);
   return next();
 });
+apiRoutes.use(
+  "*",
+  bodyLimit({
+    maxSize: MAX_API_BODY_BYTES,
+    onError: (c) => failed(c, "Request body is too large", 413),
+  }),
+);
 
 apiRoutes.get("/env", async (c) => success(c, envPayload(c.env)));
 apiRoutes.get("/settings", async (c) => success(c, mergeSettings(defaultSettings(c.env), await getSettings(c.env))));
@@ -69,7 +81,7 @@ apiRoutes.post("/storage", async (c) => {
   return success(c, await importStorage(c.env, input));
 });
 
-apiRoutes.get("/sources", async (c) => success(c, (await getAppConfig(c.env)).sources.map(toApiSource)));
+apiRoutes.get("/sources", async (c) => success(c, (await listSources(c.env)).map(toApiSource)));
 apiRoutes.post("/sources", async (c) => {
   const input = await c.req.json<JsonMap>();
   if (!stringValue(input.id || input.name)) return failed(c, "Source id is required");
@@ -94,7 +106,7 @@ apiRoutes.patch("/sources/:name", async (c) => {
 });
 apiRoutes.delete("/sources/:name", async (c) => success(c, await deleteSource(c.env, c.req.param("name"))));
 
-apiRoutes.get("/collections", async (c) => success(c, (await getAppConfig(c.env)).collections.map(toApiCollection)));
+apiRoutes.get("/collections", async (c) => success(c, (await listCollections(c.env)).map(toApiCollection)));
 apiRoutes.post("/collections", async (c) => {
   const input = await c.req.json<JsonMap>();
   if (!stringValue(input.id || input.name)) return failed(c, "Collection id is required");
@@ -119,7 +131,7 @@ apiRoutes.patch("/collections/:name", async (c) => {
 });
 apiRoutes.delete("/collections/:name", async (c) => success(c, await deleteCollection(c.env, c.req.param("name"))));
 
-apiRoutes.get("/templates", async (c) => success(c, (await getAppConfig(c.env)).templates.map(toApiTemplate)));
+apiRoutes.get("/templates", async (c) => success(c, (await listTemplates(c.env)).map(toApiTemplate)));
 apiRoutes.post("/templates", async (c) => {
   try {
     const input = await parseJsonOrText(c) as JsonMap;
@@ -456,6 +468,7 @@ type FlowRequest = {
   url: string;
   userAgent: string;
   headers: Record<string, string>;
+  timeout: number;
 };
 
 function flowFailed(c: ApiContext, message: string, status = 400) {
@@ -471,6 +484,7 @@ function parseFlowRequest(sub: JsonMap, settings: JsonMap = {}): FlowRequest | u
     url: flowUrl,
     userAgent: stringValue(args.flowUserAgent) || stringValue(settings.defaultFlowUserAgent) || stringValue(settings.defaultUserAgent) || "clash.meta/v1.19.24",
     headers: parseJsonHeaders(args.flowHeaders),
+    timeout: numberValue(settings.defaultTimeout, 30000, 1000, 120000),
   };
 }
 
@@ -494,24 +508,37 @@ function parseUrlArguments(rawUrl: string) {
 
 function parseJsonHeaders(value: unknown) {
   if (typeof value !== "string" || !value.trim()) return {};
-  const parsed = JSON.parse(value) as JsonMap;
-  return Object.fromEntries(Object.entries(parsed).map(([key, item]) => [key, String(item)]));
+  try {
+    const parsed = JSON.parse(value) as JsonMap;
+    return Object.fromEntries(Object.entries(parsed).map(([key, item]) => [key, String(item)]));
+  } catch {
+    return {};
+  }
 }
 
 async function fetchFlowHeaders(input: FlowRequest) {
-  const response = await fetch(input.url, { headers: { "user-agent": input.userAgent, ...input.headers } });
-  const headerFlow = response.headers.get("subscription-userinfo");
-  const appUrl = response.headers.get("profile-web-page-url");
-  const planName = response.headers.get("profile-title") || response.headers.get("plan-name");
-  const body = await response.text();
-  return [
-    headerFlow,
-    /(?:^|[;\n\r ])upload=/.test(body) ? body : undefined,
-    appUrl ? `app_url=${encodeURIComponent(appUrl)}` : undefined,
-    planName ? `plan_name=${encodeURIComponent(planName)}` : undefined,
-  ]
-    .filter(Boolean)
-    .join("; ");
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), input.timeout);
+  try {
+    const response = await fetch(input.url, {
+      headers: { "user-agent": input.userAgent, ...input.headers },
+      signal: controller.signal,
+    });
+    const headerFlow = response.headers.get("subscription-userinfo");
+    const appUrl = response.headers.get("profile-web-page-url");
+    const planName = response.headers.get("profile-title") || response.headers.get("plan-name");
+    const body = await readResponseText(response, MAX_FLOW_RESPONSE_BYTES, "Flow response");
+    return [
+      headerFlow,
+      /(?:^|[;\n\r ])upload=/.test(body) ? body : undefined,
+      appUrl ? `app_url=${encodeURIComponent(appUrl)}` : undefined,
+      planName ? `plan_name=${encodeURIComponent(planName)}` : undefined,
+    ]
+      .filter(Boolean)
+      .join("; ");
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function parseFlowHeaders(flowHeaders: string) {
@@ -591,4 +618,10 @@ function arrayValue(input: unknown): unknown[] {
 
 function stringValue(input: unknown): string {
   return typeof input === "string" ? input : "";
+}
+
+function numberValue(input: unknown, fallback: number, min: number, max: number) {
+  const number = Number(input);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(Math.max(Math.trunc(number), min), max);
 }

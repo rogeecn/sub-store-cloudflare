@@ -1,0 +1,65 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  MAX_REMOTE_SOURCE_RESPONSE_BYTES,
+  MAX_REMOTE_SOURCE_URLS,
+} from "../src/lib/limits";
+import { readResponseText } from "../src/lib/read";
+import { buildSubscription, normalizeTargetAlias, validateSubscriptionContent } from "../src/lib/subscription";
+
+describe("subscription parsing and limits", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("normalizes target aliases and parses URI subscriptions", () => {
+    expect(normalizeTargetAlias("clash-meta")).toBe("mihomo");
+    expect(normalizeTargetAlias("singbox")).toBe("sing-box");
+    const nodes = validateSubscriptionContent(
+      "vless://00000000-0000-4000-8000-000000000002@example.com:443?security=tls#Parsed%20Node",
+    );
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].name).toBe("Parsed Node");
+  });
+
+  it("renders a JSON target from a local source", async () => {
+    const output = await buildSubscription({
+      source: {
+        id: "local",
+        name: "Local",
+        type: "local",
+        url: "",
+        content: "trojan://password@example.com:443?sni=example.com#Trojan%20Node",
+      },
+      sources: [],
+      requestUrl: new URL("https://example.com/download/source/local/json"),
+      target: "json",
+    });
+    const payload: unknown = JSON.parse(output);
+    expect(payload && typeof payload === "object" ? Reflect.get(payload, "proxies") : undefined).toHaveLength(1);
+  });
+
+  it("rejects sources with too many remote URLs before fetching", async () => {
+    const urls = Array.from({ length: MAX_REMOTE_SOURCE_URLS + 1 }, (_, index) => `https://example.com/${index}`).join("\n");
+    await expect(buildSubscription({
+      source: { id: "remote", name: "Remote", type: "remote", url: urls, content: "" },
+      sources: [],
+      requestUrl: new URL("https://example.com/download/source/remote/json"),
+      target: "json",
+    })).rejects.toThrow(`${MAX_REMOTE_SOURCE_URLS} URL limit`);
+  });
+
+  it("stops reading oversized remote responses", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("x".repeat(MAX_REMOTE_SOURCE_RESPONSE_BYTES + 1), { status: 200 }),
+    );
+    await expect(buildSubscription({
+      source: { id: "remote", name: "Remote", type: "remote", url: "https://example.com/sub", content: "" },
+      sources: [],
+      requestUrl: new URL("https://example.com/download/source/remote/json"),
+      target: "json",
+    })).rejects.toThrow("2 MiB limit");
+  });
+
+  it("honors Content-Length before consuming a response stream", async () => {
+    const response = new Response("small", { headers: { "content-length": "999" } });
+    await expect(readResponseText(response, 10, "Test response")).rejects.toThrow("10 byte limit");
+  });
+});

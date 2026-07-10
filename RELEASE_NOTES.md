@@ -1,15 +1,16 @@
-# v0.1.1
+# v0.2.0
 
-Open-source polish release for Sub-Store Cloudflare.
+Runtime hardening and performance release for Sub-Store Cloudflare.
 
 ## Highlights
 
-- Removes GitHub Actions and Dependabot from the upstream repository.
-- Keeps lightweight GitHub issue forms and a pull request template for contributor intake; they do not run CI/CD.
-- Keeps releases gated by local checks: `pnpm run check:release` and `pnpm run deploy:dry-run`.
-- Clarifies the two deployment paths: Cloudflare Deploy Button for quick template import, and `pnpm run install:cloudflare` for local Agent/CLI installs.
-- Updates Worker compatibility dates and documents the Node 22 + pnpm baseline.
-- Keeps the Cloudflare-native architecture: Workers Static Assets + Worker API + D1 + Worker Secrets.
+- Removes request-time schema work; D1 migrations now own schema changes and built-in templates ship directly with Worker code.
+- Adds hard limits for API bodies and remote responses, hardened security headers, and generic client-facing 500 errors.
+- Removes admin tokens from browser URLs and exports backups through an authenticated blob request.
+- Lazy-loads the settings route and CodeMirror editor to reduce the initial frontend payload.
+- Consolidates the repository into one pnpm workspace and updates the Worker/frontend toolchain.
+- Adds Workers/D1 integration tests, production dependency audits, and a real Worker startup smoke test to `pnpm run check:release`.
+- Keeps the architecture focused on Workers Static Assets + Worker API + D1 + Worker Secrets.
 
 ## Install
 
