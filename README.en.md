@@ -82,6 +82,7 @@ For Codex, Claude Code, or another local coding agent, copy [agent/install.promp
 - Manages remote subscription URLs and local node text.
 - Combines multiple sources into one cloud-side collection.
 - Filters by region, type, and regex; renames, deletes matched name text, deduplicates, regex-sorts, resolves node hostnames, adds/removes flags, and applies common node options.
+- Runs JavaScript filters/operators bundled with the Worker; built-ins are selectable in the UI and personal scripts are redeployed through the CLI installer.
 - Provides built-in Mihomo routing templates and supports custom JSON/YAML templates.
 - Previews original and processed node lists in the admin UI.
 - Supports subscription usage info, config backup/restore, User-Agent options, pass-through User-Agent, timeout, and remote fetch concurrency.

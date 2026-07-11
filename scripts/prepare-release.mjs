@@ -5,7 +5,7 @@ const version = process.argv.slice(2).filter((arg) => arg !== "--")[0];
 
 if (!version || !/^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version)) {
   console.error("Usage: node scripts/prepare-release.mjs <version>");
-  console.error("Example: node scripts/prepare-release.mjs v0.2.0");
+  console.error("Example: node scripts/prepare-release.mjs v0.3.0");
   process.exit(1);
 }
 
@@ -38,7 +38,10 @@ function assertCleanEnough() {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
-  const privateFindings = status.filter((line) => /\.(local|private)\./.test(line) || line.includes(".dev.vars") || line.includes("agent.seed.local.sql"));
+  const privateFindings = status.filter((line) => {
+    const isDocumentedExample = /\.(?:local|private)\.example\./.test(line);
+    return (!isDocumentedExample && /\.(local|private)\./.test(line)) || line.includes(".dev.vars") || line.includes("agent.seed.local.sql");
+  });
   if (privateFindings.length > 0) {
     fail(`Private local files appear in git status:\n${privateFindings.join("\n")}`);
   }

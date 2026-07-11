@@ -18,6 +18,9 @@ cloudflare/wrangler.deploy.local.jsonc
 *.setup.local.sql
 *.private.json
 *.private.sql
+config/scripts.local/
+config/script-plugins.local.json
+cloudflare/src/generated/
 
 # Dependency and build output
 **/node_modules/
@@ -29,6 +32,7 @@ cloudflare/wrangler.deploy.local.jsonc
 **/coverage/
 **/.nyc_output/
 **/*.tsbuildinfo
+*.cpuprofile
 
 # Local runtime state and secrets
 .dev.vars

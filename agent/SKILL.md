@@ -29,7 +29,7 @@ Follow AGENTS.md and agent/SKILL.md in this repository. Deploy this Sub-Store Cl
 - Do not add R2/KV/Queues/Durable Objects unless the codebase is changed for that storage model.
 - Do not use browser automation for Cloudflare setup unless the user explicitly asks for a visual walkthrough.
 - Treat upstream Sub-Store as a reference for retained source, collection, filter, template, preview, backup/restore, and download workflows only.
-- Do not add files, sync, share, archive, script runtime, logs, queues, cron, or artifact features during installation or cleanup work.
+- Do not add files, sync, share, archive, runtime-evaluated scripts, logs, queues, cron, or artifact features during installation or cleanup work. Build-time bundled Filter / Operator scripts are supported.
 
 ## Execution Checklist
 

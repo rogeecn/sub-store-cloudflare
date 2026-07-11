@@ -407,7 +407,13 @@ export default {
           invalidData: "Invalid data format"
         },
         enable: "Enable",
-        disable: "Disable"
+        disable: "Disable",
+        script: {
+          freeVerified: "Cloudflare Free verified",
+          personal: "Personal build-time script",
+          unavailable: "This script is not available in the deployed Worker. Redeploy a Worker that includes it.",
+          limit: "A source or collection can use at most two script actions"
+        }
       },
       nodeActions: {
         "Flag Operator": {
@@ -627,6 +633,16 @@ export default {
           },
           tipsTitle: "Handle Duplicate Tips",
           tipsDes: "Node deduplication operation instructions"
+        },
+        "Script Filter": {
+          label: "Build-time Script Filter",
+          tipsTitle: "Script Filter",
+          tipsDes: "Runs a filter already bundled with the Worker. No script text is evaluated from the browser, D1, or a remote URL."
+        },
+        "Script Operator": {
+          label: "Build-time Script Operator",
+          tipsTitle: "Script Operator",
+          tipsDes: "Runs a node transformer already bundled with the Worker. Built-ins are Free-verified; personal scripts require redeployment."
         }
       },
       sourceNamePicker: {

@@ -36,6 +36,51 @@ describe("Worker and D1 integration", () => {
     expect(getPath(await jsonObject(authorized), "status")).toBe("success");
   });
 
+  it("publishes build-time script metadata and executes saved script actions", async () => {
+    const scriptsResponse = await workerRequest("/api/scripts");
+    expect(scriptsResponse.status).toBe(200);
+    const scripts = getPath(await jsonObject(scriptsResponse), "data");
+    expect(Array.isArray(scripts) ? scripts.map((script) => getPath(script, "id")) : []).toEqual(
+      expect.arrayContaining(["tls-fingerprint", "name-regex-filter"]),
+    );
+
+    const create = await workerRequest("/api/sources", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "scripted-source",
+        name: "Scripted Source",
+        type: "local",
+        content: "trojan://password@example.com:443#Scripted%20Node",
+        filters: [{
+          type: "script",
+          scriptId: "tls-fingerprint",
+          scriptKind: "operator",
+          arguments: { fingerprint: "safari" },
+        }],
+      }),
+    });
+    expect(create.status).toBe(200);
+
+    const download = await workerRequest(`/download/source/scripted-source/json/${DOWNLOAD_TOKEN}`, {}, false);
+    expect(download.status).toBe(200);
+    expect(await download.text()).toContain('"tls-fingerprint": "safari"');
+
+    const invalid = await workerRequest("/api/sources", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "missing-script-source",
+        name: "Missing Script",
+        type: "local",
+        content: "trojan://password@example.com:443#Node",
+        filters: [{ type: "script", scriptId: "missing-script" }],
+      }),
+    });
+    expect(invalid.status).toBe(400);
+    expect(getPath(await jsonObject(invalid), "error", "message")).toContain("Unknown script");
+  });
+
   it("hardens the download-only host boundary", async () => {
     const response = await workerExports.default.fetch(new Request("https://downloads.example.com/"));
     expect(response.status).toBe(404);

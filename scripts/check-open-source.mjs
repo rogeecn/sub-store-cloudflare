@@ -17,8 +17,8 @@ const removedFeaturePaths = [
   [/^frontend\/src\/views\/(File|FileEditor|Logs|Sync|SyncEditor)\.vue$/, "removed frontend feature view"],
   [/^frontend\/src\/views\/(archive|share|settings)\//, "removed frontend feature view"],
   [/^frontend\/src\/views\/editor\/components\/(AddProxiesFromSubscription|Script|MonacoEditor)\.vue$/, "removed frontend feature editor component"],
-  [/^cloudflare\/src\/routes\/(files|share|sync|archive|logs|artifacts|scripts)\.ts$/, "removed worker feature route"],
-  [/^cloudflare\/src\/lib\/(files|share|sync|archive|logs|artifacts|scripts)\.ts$/, "removed worker feature library"],
+  [/^cloudflare\/src\/routes\/(files|share|sync|archive|logs|artifacts)\.ts$/, "removed worker feature route"],
+  [/^cloudflare\/src\/lib\/(files|share|sync|archive|logs|artifacts)\.ts$/, "removed worker feature library"],
 ];
 const removedStaticAssetPaths = [
   [/^frontend\/public\/manifests\.json$/, "removed PWA manifest"],

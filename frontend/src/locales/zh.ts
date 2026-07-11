@@ -407,7 +407,13 @@ export default {
           invalidData: "数据格式错误"
         },
         enable: "启用",
-        disable: "禁用"
+        disable: "禁用",
+        script: {
+          freeVerified: "已通过 Cloudflare 免费版验证",
+          personal: "个人构建时脚本",
+          unavailable: "当前部署中没有这个脚本。请重新部署包含该脚本的 Worker。",
+          limit: "每个订阅源或组合订阅最多添加两个脚本操作"
+        }
       },
       nodeActions: {
         "Flag Operator": {
@@ -627,6 +633,16 @@ export default {
           },
           tipsTitle: "节点去重操作提示",
           tipsDes: "对名字重复的节点进行操作（移除/重命名）。重命名模式下，会自动为重名节点添加序号，序号样式和位置可以自定义。同时序号和名字之间的连接符也可以自定义"
+        },
+        "Script Filter": {
+          label: "构建时脚本过滤",
+          tipsTitle: "脚本过滤说明",
+          tipsDes: "运行已经随 Worker 编译的过滤脚本。脚本不是从网页、D1 或远程地址动态执行。"
+        },
+        "Script Operator": {
+          label: "构建时脚本操作",
+          tipsTitle: "脚本操作说明",
+          tipsDes: "运行已经随 Worker 编译的节点修改脚本。内置脚本经过免费版验证；个人脚本需要重新部署。"
         }
       },
       sourceNamePicker: {

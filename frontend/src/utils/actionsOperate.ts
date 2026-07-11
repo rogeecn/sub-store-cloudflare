@@ -4,6 +4,7 @@ import FilterSelect from '@/views/editor/components/FilterSelect.vue';
 import Regex from '@/views/editor/components/Regex.vue';
 import HandleDuplicate from '@/views/editor/components/HandleDuplicate.vue';
 import Sort from '@/views/editor/components/Sort.vue';
+import ScriptAction from '@/views/editor/components/ScriptAction.vue';
 
 export const addItem = (
   form,
@@ -78,6 +79,16 @@ export const addItem = (
           field: ['name'],
         },
         customName
+      });
+      break;
+    case 'Script Filter':
+    case 'Script Operator':
+      obj.component = shallowRef(ScriptAction);
+      form.process.push({
+        id,
+        type,
+        args: args ?? { scriptId: '', scriptKind: type === 'Script Filter' ? 'filter' : 'operator', arguments: {} },
+        customName,
       });
       break;
   }

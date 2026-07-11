@@ -63,6 +63,7 @@ pnpm run install:cloudflare
 - 渲染并导入 `cloudflare/agent.seed.local.sql`。
 - 验证 `/api/env`、`/api/templates`、`/api/sources`、`/api/collections` 和 collection 下载链接。
 - 打印 admin URL 和 collection download URLs。
+- 在构建前生成 JavaScript 脚本注册表；如果存在本地个人脚本清单，会一起编译进 Worker。
 
 如果配置里没有 token，安装器会本地生成，并写回被 Git 忽略的 `config/agent-setup.local.json`。这样部署中途失败后可以安全重跑，不会因为 token 自动轮换导致前后不一致。HTTP 验证任一失败时命令会以非零状态退出，并打印当前进度和恢复命令；不要把仅完成 `wrangler deploy` 当成完整成功。
 
@@ -127,6 +128,11 @@ pnpm run seed:local
 - `config/agent-setup.local.json`
 - `cloudflare/agent.seed.local.sql`
 - `cloudflare/wrangler.deploy.local.jsonc`
+- `config/script-plugins.local.json`
+- `config/scripts.local/`
+- `cloudflare/src/generated/`
+
+需要个人 JavaScript Filter / Operator 时，按 [script-plugins.md](script-plugins.md) 创建本地脚本清单。个人脚本属于部署代码，修改后必须重新运行 installer；Deploy to Cloudflare 按钮只包含公开内置脚本。
 
 ## 4. 手动 Wrangler 部署
 

@@ -9,6 +9,7 @@ This roadmap is intentionally conservative. The project should stay easy to depl
 - Worker Secrets for admin and download tokens.
 - Cloudflare Deploy Button for quick installs.
 - Agent / CLI installer for seeded sources and collections.
+- Free-verified build-time JavaScript filters/operators, plus CLI-deployed personal scripts.
 - Local release gates instead of GitHub CI/CD.
 
 ## Near-Term Priorities
@@ -17,7 +18,6 @@ This roadmap is intentionally conservative. The project should stay easy to depl
 - Add focused tests around Worker API behavior and output targets.
 - Tighten docs for common Mihomo, sing-box, URI, and JSON workflows.
 - Improve import/export safety and validation messages.
-- Prototype build-time bundled JavaScript filters/operators against the Cloudflare Workers Free limits. The accepted design is documented in [docs/superpowers/specs/2026-07-11-build-time-script-compatibility-design.md](docs/superpowers/specs/2026-07-11-build-time-script-compatibility-design.md); implementation has not shipped yet.
 - Add screenshots or short GIFs after the UI stabilizes.
 
 ## Later, If Needed

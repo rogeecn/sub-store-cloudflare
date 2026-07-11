@@ -46,7 +46,7 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "type": { "enum": ["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "resolve", "flag", "quick"] },
+        "type": { "enum": ["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "resolve", "flag", "quick", "script"] },
         "field": { "type": "string" },
         "fields": {
           "type": "array",
@@ -80,6 +80,9 @@
             { "type": "string" }
           ]
         },
+        "scriptId": { "$ref": "#/$defs/identifier" },
+        "scriptKind": { "enum": ["filter", "operator"] },
+        "arguments": { "type": "object" },
         "useless": { "enum": ["DEFAULT", "ENABLED", "DISABLED"] },
         "udp": { "enum": ["DEFAULT", "ENABLED", "DISABLED"] },
         "scert": { "enum": ["DEFAULT", "ENABLED", "DISABLED"] },

@@ -23,6 +23,7 @@ Sub-Store Cloudflare 是一个云端订阅配置器，不是完整 Sub-Store 的
 - 远程订阅 URL 和本地节点文本。
 - 单订阅源和组合订阅。
 - 常用节点过滤、重命名、正则删除、去重、排序、旗帜处理、域名解析和常用属性设置。
+- 随 Worker 编译的 JavaScript Filter / Operator；内置脚本经过免费版验证，个人脚本需要重新部署。
 - Mihomo / Stash 规则模板，以及可导入的自定义模板。
 - 原始节点和处理后节点预览，本地节点格式校验。
 - Mihomo、Stash、Surge、Surfboard、Loon、Egern、Shadowrocket、Quantumult X、sing-box、v2ray、URI 和 JSON 输出。
@@ -32,11 +33,11 @@ Sub-Store Cloudflare 是一个云端订阅配置器，不是完整 Sub-Store 的
 
 这些能力都服务于“生成最终订阅链接”这条主线。
 
-## 已接受但尚未实现的方向
+## 构建时脚本边界
 
-项目计划研究构建时打包的 JavaScript Filter / Operator：脚本随 Worker 一起由 Wrangler 编译，D1 只保存脚本 ID 和参数，不在请求期间执行来自网页、D1 或远程 URL 的代码字符串。
+JavaScript Filter / Operator 随 Worker 一起由 Wrangler 编译，D1 只保存脚本 ID 和参数，不在请求期间执行来自网页、D1 或远程 URL 的代码字符串。
 
-这个方向只承诺经过 Cloudflare Workers 免费版性能验证的内置脚本。个人脚本需要通过 Agent / CLI installer 重新部署，并属于部署者信任的应用代码，不是沙箱中的不可信输入。详细设计和兼容边界见 [superpowers/specs/2026-07-11-build-time-script-compatibility-design.md](superpowers/specs/2026-07-11-build-time-script-compatibility-design.md)。在实现、测试和发布完成前，前端和 README 不会把它写成现有功能。
+项目只承诺经过 Cloudflare Workers 免费版性能验证的内置脚本。个人脚本需要通过 Agent / CLI installer 重新部署，并属于部署者信任的应用代码，不是沙箱中的不可信输入。用法见 [script-plugins.md](script-plugins.md)，完整设计见 [superpowers/specs/2026-07-11-build-time-script-compatibility-design.md](superpowers/specs/2026-07-11-build-time-script-compatibility-design.md)。
 
 ## 不默认加入的能力
 

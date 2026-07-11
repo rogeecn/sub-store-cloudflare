@@ -7,9 +7,11 @@ import {
   MAX_REMOTE_SOURCE_URLS,
 } from "./limits";
 import { readResponseText, utf8ByteLength } from "./read";
+import { applyScriptAction, validateScriptActions } from "./scripts";
 import type {
   AppSettings,
   FilterRule,
+  ProxyNode,
   RoutingTemplate,
   RoutingTemplateConfig,
   SubscriptionCollection,
@@ -17,13 +19,6 @@ import type {
   SubscriptionTarget,
   TemplateProxyGroup,
 } from "../types";
-
-type ProxyNode = Record<string, unknown> & {
-  name: string;
-  type: string;
-  server?: string;
-  port?: number;
-};
 
 type SingBoxOutbound = Record<string, unknown> & {
   type: string;
@@ -80,11 +75,17 @@ export async function previewSubscription(options: Pick<BuildOptions, "source" |
   );
   const original = addPreviewIds(originalLists.flat());
   const processedLists = await runWithConcurrency(
-    originalLists.map((nodes, index) => async () => applyFilters(nodes, getFilters(sources[index]), options.settings)),
+    originalLists.map((nodes, index) => async () => applyFilters(nodes, getFilters(sources[index]), options.settings, {
+      targetPlatform: "json",
+      sourceId: sources[index].id,
+    })),
     getRequestConcurrency(options.settings),
     getRequestConcurrencyWait(options.settings),
   );
-  const processed = addPreviewIds(ensureUniqueProxyNames(await applyFilters(processedLists.flat(), getFilters(options.collection), options.settings)));
+  const processed = addPreviewIds(ensureUniqueProxyNames(await applyFilters(processedLists.flat(), getFilters(options.collection), options.settings, {
+    targetPlatform: "json",
+    collectionId: options.collection?.id,
+  })));
 
   return { original, processed };
 }
@@ -92,7 +93,10 @@ export async function previewSubscription(options: Pick<BuildOptions, "source" |
 export async function previewSourceContent(source: SubscriptionSource, settings?: AppSettings) {
   const original = parseProxies(decodeMaybeBase64(source.content || source.url || ""));
   if (original.length === 0) throw new Error(formatInvalidLocalContentError(source.content || source.url || ""));
-  const processed = ensureUniqueProxyNames(await applyFilters(original, getFilters(source), settings));
+  const processed = ensureUniqueProxyNames(await applyFilters(original, getFilters(source), settings, {
+    targetPlatform: "json",
+    sourceId: source.id,
+  }));
   return {
     original: addPreviewIds(original),
     processed: addPreviewIds(processed),
@@ -109,14 +113,22 @@ async function loadProxyNodes(options: BuildOptions) {
   const sources = getSources(options).filter((sub) => sub.enabled !== false);
   if (sources.length === 0) return [];
 
-  const tasks = sources.map((sub) => async () => applyFilters(parseProxies(await loadSubscriptionRaw(sub, options.settings, options.requestUserAgent)), getFilters(sub), options.settings));
+  const tasks = sources.map((sub) => async () => applyFilters(
+    parseProxies(await loadSubscriptionRaw(sub, options.settings, options.requestUserAgent)),
+    getFilters(sub),
+    options.settings,
+    { targetPlatform: options.target, sourceId: sub.id },
+  ));
   const proxyLists = options.collection?.ignoreFailed
     ? (await runSettledWithConcurrency(tasks, getRequestConcurrency(options.settings), getRequestConcurrencyWait(options.settings))).flatMap((result) =>
         result.status === "fulfilled" ? [result.value] : [],
       )
     : await runWithConcurrency(tasks, getRequestConcurrency(options.settings), getRequestConcurrencyWait(options.settings));
 
-  return ensureUniqueProxyNames(await applyFilters(proxyLists.flat(), getFilters(options.collection), options.settings));
+  return ensureUniqueProxyNames(await applyFilters(proxyLists.flat(), getFilters(options.collection), options.settings, {
+    targetPlatform: options.target,
+    collectionId: options.collection?.id,
+  }));
 }
 
 function getSources(options: BuildOptions) {
@@ -931,7 +943,14 @@ function parseWireGuard(line: string, index: number): ProxyNode {
   });
 }
 
-async function applyFilters(proxies: ProxyNode[], filters: FilterRule[], settings?: AppSettings) {
+async function applyFilters(
+  proxies: ProxyNode[],
+  filters: FilterRule[],
+  settings?: AppSettings,
+  scriptContext: { targetPlatform: SubscriptionTarget; sourceId?: string; collectionId?: string } = { targetPlatform: "json" },
+) {
+  const scriptError = validateScriptActions(filters);
+  if (scriptError) throw new Error(scriptError);
   let current = proxies;
   for (const filter of filters) {
     if (!filter || typeof filter !== "object") continue;
@@ -945,6 +964,10 @@ async function applyFilters(proxies: ProxyNode[], filters: FilterRule[], setting
     else if (filter.type === "flag") current = flagProxies(current, filter);
     else if (filter.type === "quick") current = applyQuickSettings(current, filter);
     else if (filter.type === "resolve") current = await resolveProxyDomains(current, filter, settings);
+    else if (filter.type === "script") current = await applyScriptAction(current, filter, scriptContext.targetPlatform, {
+      sourceId: scriptContext.sourceId,
+      collectionId: scriptContext.collectionId,
+    });
   }
   return current;
 }

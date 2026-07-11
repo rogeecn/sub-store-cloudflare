@@ -10,6 +10,9 @@ const SETUP_PATH = "config/agent-setup.local.json";
 const SETUP_EXAMPLE_PATH = "config/agent-setup.example.json";
 const LOCAL_WRANGLER_PATH = "cloudflare/wrangler.deploy.local.jsonc";
 const SEED_SQL_PATH = "cloudflare/agent.seed.local.sql";
+const LOCAL_SCRIPT_MANIFEST_PATH = "config/script-plugins.local.json";
+const LOCAL_SCRIPT_DIRECTORY = "config/scripts.local";
+const GENERATED_SCRIPT_DIRECTORY = "cloudflare/src/generated";
 const ADMIN_SECRET = "SUB_STORE_ADMIN_TOKEN";
 const DOWNLOAD_SECRET = "SUB_STORE_PUBLIC_DOWNLOAD_TOKEN";
 
@@ -268,11 +271,11 @@ function printResult({ baseUrl, adminToken, downloadToken, workerName, d1Databas
   run("git", ["status", "--short"], { label: "git status --short", passthrough: true, soft: true });
   verifyPrivatePaths();
   console.log("");
-  info(`Private local files remain ignored: ${SETUP_PATH}, ${LOCAL_WRANGLER_PATH}, ${SEED_SQL_PATH}.`);
+  info(`Private local files remain ignored: ${SETUP_PATH}, ${LOCAL_WRANGLER_PATH}, ${SEED_SQL_PATH}, ${LOCAL_SCRIPT_MANIFEST_PATH}, ${LOCAL_SCRIPT_DIRECTORY}.`);
 }
 
 function verifyPrivatePaths() {
-  for (const path of [SETUP_PATH, LOCAL_WRANGLER_PATH, SEED_SQL_PATH, ".dev.vars", "cloudflare/.dev.vars"]) {
+  for (const path of [SETUP_PATH, LOCAL_WRANGLER_PATH, SEED_SQL_PATH, LOCAL_SCRIPT_MANIFEST_PATH, LOCAL_SCRIPT_DIRECTORY, GENERATED_SCRIPT_DIRECTORY, ".dev.vars", "cloudflare/.dev.vars"]) {
     const tracked = spawnSync("git", ["ls-files", "--error-unmatch", path], { stdio: "ignore" });
     if (tracked.status === 0) fail(`Privacy check failed: ${path} is tracked by git.`);
     const ignored = spawnSync("git", ["check-ignore", "-q", path], { stdio: "ignore" });

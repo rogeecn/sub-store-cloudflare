@@ -28,7 +28,17 @@ export type FilterRule = {
   url?: string;
   edns?: string;
   concurrency?: number | string;
+  scriptId?: string;
+  scriptKind?: "filter" | "operator";
+  arguments?: Record<string, unknown>;
   [key: string]: unknown;
+};
+
+export type ProxyNode = Record<string, unknown> & {
+  name: string;
+  type: string;
+  server?: string;
+  port?: number;
 };
 
 export type SubscriptionSource = {

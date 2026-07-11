@@ -73,6 +73,7 @@ Cloudflare Worker
 
 - 订阅源管理和组合订阅。
 - 节点解析、过滤、重命名、去重、排序、域名解析、旗帜和常用属性设置。
+- 构建时打包的 JavaScript Filter / Operator。
 - Mihomo 规则模板和自定义模板。
 - 原始/处理后节点预览，本地节点校验。
 - 下载链接级临时输入和一次性格式转换。
@@ -80,7 +81,7 @@ Cloudflare Worker
 - 订阅流量信息、配置备份与恢复。
 - Mihomo、Stash、Surge、Surfboard、Loon、Egern、Shadowrocket、Quantumult X、sing-box、v2ray、URI、JSON 输出。
 
-脚本运行、文件托管、Gist 同步、分享、归档、定时任务和日志系统不在核心路径里，也不会保留空壳 UI 或兼容接口。
+运行时脚本字符串、远程脚本、文件托管、Gist 同步、分享、归档、定时任务和日志系统不在核心路径里，也不会保留空壳 UI 或兼容接口。
 
 ## Filters
 
@@ -96,6 +97,7 @@ Cloudflare Worker
 - `resolve`：请求时用 DoH 把节点域名解析成 IPv4/IPv6，并保留 TLS 节点的原始 SNI。
 - `flag`：按节点名识别区域旗帜，或移除已有旗帜。
 - `quick`：过滤无效节点，并批量设置 `udp`、`tfo`、`skip-cert-verify`、`vmess aead` 等常用属性。
+- `script`：按 code-owned script ID 调用已经随 Worker 编译的 Filter / Operator，D1 只保存 ID、kind 和参数。
 
 示例：
 

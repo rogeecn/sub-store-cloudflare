@@ -88,6 +88,7 @@ pnpm run install:cloudflare
 - 管理远程订阅 URL 和本地节点文本。
 - 把多个订阅源组合成一个云端组合订阅。
 - 对节点做区域/类型/正则过滤、重命名、正则删除、去重、正则排序、域名解析、旗帜处理和常用属性设置。
+- 支持随 Worker 编译的 JavaScript Filter / Operator；内置脚本可在网页选择，个人脚本通过 CLI 重新部署。
 - 内置常用 Mihomo 分流模板，也支持导入自己的 JSON/YAML 模板。
 - 在网页里预览处理前后的节点列表，并校验本地节点内容。
 - 支持订阅流量信息、配置备份/恢复、远程订阅请求超时、User-Agent、透传 User-Agent 和并发参数。
@@ -97,7 +98,7 @@ pnpm run install:cloudflare
 
 这个项目聚焦“云端聚合 + 云端节点处理 + 云端规则模板 + 最终订阅输出”。核心循环是：添加订阅源，处理节点，组合订阅，套用规则模板，预览校验，复制下载链接。它不是完整 Sub-Store 的逐项复刻，也不是 Cloudflare 功能展示项目。
 
-详细边界见 [docs/product-scope.md](docs/product-scope.md)。
+详细边界见 [docs/product-scope.md](docs/product-scope.md)，脚本用法见 [docs/script-plugins.md](docs/script-plugins.md)。
 
 ## 架构
 

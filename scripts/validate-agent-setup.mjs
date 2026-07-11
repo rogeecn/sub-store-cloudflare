@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const [inputArg = "config/agent-setup.local.json"] = process.argv.slice(2).filter((arg) => arg !== "--");
@@ -18,6 +18,7 @@ const SUPPORTED_TARGETS = new Set(["mihomo", "stash", "surge", "surfboard", "loo
 const SUPPORTED_TEMPLATE_TARGETS = new Set(["mihomo", "stash"]);
 const SUPPORTED_RESOLVE_PROVIDERS = new Set(["Google", "Cloudflare", "Ali", "Tencent", "Custom"]);
 const ID_PATTERN = /^[a-z0-9_-]{1,64}$/;
+const scriptPlugins = loadScriptPlugins();
 
 const errors = [];
 const warnings = [];
@@ -171,13 +172,14 @@ function validateFilterPresetIds(presetIds, label) {
 }
 
 function validateFilters(filters, label) {
+  let scriptCount = 0;
   for (const [index, filter] of array(filters).entries()) {
     if (!object(filter)) {
       errors.push(`${label}[${index}] must be an object`);
       continue;
     }
 
-    if (!["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "resolve", "flag", "quick"].includes(filter.type)) {
+    if (!["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "resolve", "flag", "quick", "script"].includes(filter.type)) {
       errors.push(`${label}[${index}].type is unsupported: ${filter.type}`);
       continue;
     }
@@ -226,7 +228,29 @@ function validateFilters(filters, label) {
         }
       }
     }
+    if (filter.type === "script") {
+      scriptCount += 1;
+      const scriptId = stringValue(filter.scriptId);
+      const plugin = scriptPlugins.get(scriptId);
+      if (!scriptId) errors.push(`${label}[${index}].scriptId is required`);
+      else if (!plugin) errors.push(`${label}[${index}].scriptId is not available in this build: ${scriptId}`);
+      if (filter.arguments !== undefined && !object(filter.arguments)) errors.push(`${label}[${index}].arguments must be an object`);
+      if (plugin && filter.scriptKind && filter.scriptKind !== plugin.kind) errors.push(`${label}[${index}].scriptKind must be ${plugin.kind}`);
+      const args = object(filter.arguments) ? filter.arguments : {};
+      for (const parameter of array(plugin?.parameters)) {
+        const value = args[parameter.key] ?? parameter.default;
+        if (parameter.required && (value === undefined || value === null || value === "")) {
+          errors.push(`${label}[${index}].arguments.${parameter.key} is required`);
+        }
+      }
+    }
   }
+  if (scriptCount > 2) errors.push(`${label} supports at most 2 script actions`);
+}
+
+function loadScriptPlugins() {
+  const paths = [resolve("config/script-plugins.json"), resolve("config/script-plugins.local.json")].filter(existsSync);
+  return new Map(paths.flatMap((path) => array(JSON.parse(readFileSync(path, "utf8")).scripts)).map((plugin) => [stringValue(plugin.id), plugin]));
 }
 
 function stringValue(value) {

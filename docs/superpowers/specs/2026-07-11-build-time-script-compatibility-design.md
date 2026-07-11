@@ -1,6 +1,6 @@
 # Build-time JavaScript compatibility design
 
-Status: approved design; implementation pending.
+Status: implemented in v0.3.0.
 
 Date: 2026-07-11
 

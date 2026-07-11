@@ -6,6 +6,15 @@ This project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-11
+
+### Added
+
+- Added build-time JavaScript Filter / Operator support without runtime `eval()` or `new Function()`.
+- Added code-owned script metadata at `/api/scripts`, metadata-driven admin UI controls, and two Free-verified built-ins: TLS fingerprint and name regex filter.
+- Added gitignored personal script manifests and source directories that the Agent/CLI installer compiles into the Worker registry.
+- Added Worker/D1 integration coverage for script metadata, validation, execution, arguments, unavailable scripts, and per-stage limits.
+
 ### Changed
 
 - Aligned source and collection validation, immutable IDs, partial updates, and empty-collection membership semantics across the Worker, frontend, installer, and documentation.
@@ -13,7 +22,7 @@ This project follows semantic versioning where practical.
 
 ### Documentation
 
-- Documented the accepted, not-yet-implemented design for Free-compatible build-time JavaScript filters and operators, including upstream compatibility levels, deployment paths, security boundaries, and performance gates.
+- Documented Free-compatible build-time JavaScript filters and operators, personal deployment steps, upstream compatibility levels, security boundaries, and performance gates.
 
 ## [0.2.0] - 2026-07-10
 

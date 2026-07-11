@@ -12,7 +12,7 @@ Deploy Sub-Store Cloudflare into the user's Cloudflare account, import their sub
 - Use D1 for structured configuration. Do not switch to R2/KV/Durable Objects/Queues/Cron/Pages unless the user explicitly changes the architecture and the code is updated for it.
 - The public data model is `sources`, `collections`, `templates`, `filters`, `settings`, and `sourceIds`.
 - Treat upstream Sub-Store as a reference for retained source, collection, filter, template, preview, backup/restore, and download workflows only.
-- Do not add files, Gist sync, share, archive, script runtime, logs, queues, cron, or artifact features during install or cleanup work.
+- Do not add files, Gist sync, share, archive, runtime-evaluated scripts, logs, queues, cron, or artifact features during install or cleanup work. Build-time bundled Filter / Operator scripts are supported through the existing pipeline.
 
 ## Deployment Paths
 
@@ -77,6 +77,10 @@ Ask only for missing inputs. Prefer reasonable defaults when the user does not c
   - default collection filters: `dedupe-by-endpoint`, `sort-by-name`.
   - provider-info cleanup: `clean-provider-nodes`.
   - ask before using region include filters such as `hk-jp-sg-us-only`.
+- Build-time scripts:
+  - use public built-ins for ordinary installs.
+  - put personal manifests in `config/script-plugins.local.json` and code in `config/scripts.local/`.
+  - never store or execute script source from D1, the browser, or a remote URL.
 
 ## Workflow
 

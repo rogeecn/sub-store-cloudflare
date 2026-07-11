@@ -6,6 +6,7 @@ import { failed, requireAdmin, success } from "../lib/http";
 import { BUILTIN_TEMPLATE_IDS } from "../lib/defaults";
 import { MAX_API_BODY_BYTES, MAX_FLOW_RESPONSE_BYTES } from "../lib/limits";
 import { readResponseText } from "../lib/read";
+import { listScriptMetadata, validateScriptActions } from "../lib/scripts";
 import {
   deleteCollection,
   deleteSource,
@@ -58,6 +59,7 @@ apiRoutes.use(
 );
 
 apiRoutes.get("/env", async (c) => success(c, envPayload(c.env)));
+apiRoutes.get("/scripts", async (c) => success(c, listScriptMetadata()));
 apiRoutes.get("/settings", async (c) => success(c, mergeSettings(defaultSettings(c.env), await getSettings(c.env))));
 apiRoutes.patch("/settings", async (c) => {
   const input = await c.req.json<JsonMap>().catch(() => ({}));
@@ -252,7 +254,7 @@ function envPayload(env: SubStoreEnv) {
     version: FRONTEND_VERSION,
     runtime: "Cloudflare Workers",
     storage: "D1",
-    feature: {},
+    feature: { buildTimeScripts: true },
     meta: {
       cloudflare: {
         env: {
@@ -439,6 +441,8 @@ function getPublicBaseUrl(c: ApiContext) {
 function validateSource(input: Partial<SourceRecord>) {
   const idError = validateRecordId(input.id, "Source");
   if (idError) return idError;
+  const scriptError = validateScriptActions(input.filters || []);
+  if (scriptError) return scriptError;
   if (input.type === "local") {
     return stringValue(input.content) ? undefined : "Local source content is required";
   }
@@ -458,6 +462,8 @@ function validateSourcePayload(input: JsonMap, partial = false) {
 async function validateCollection(env: SubStoreEnv, input: Partial<CollectionRecord>) {
   const idError = validateRecordId(input.id, "Collection");
   if (idError) return idError;
+  const scriptError = validateScriptActions(input.filters || []);
+  if (scriptError) return scriptError;
   const sourceIds = input.sourceIds || [];
   const sourceIdSet = new Set((await listSources(env)).map((source) => source.id));
   const missingSources = sourceIds.filter((id) => !sourceIdSet.has(id));
@@ -660,7 +666,7 @@ function processToFilter(input: unknown): FilterRule | FilterRule[] | undefined 
   const item = objectValue(input);
   if (!item.type || item.disabled === true) return undefined;
   const args = objectValue(item.args);
-  if (["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "flag", "quick", "resolve"].includes(String(item.type))) {
+  if (["include", "exclude", "rename", "delete-field", "dedupe", "sort", "regex-sort", "flag", "quick", "resolve", "script"].includes(String(item.type))) {
     const { id: _id, customName: _customName, disabled: _disabled, ...filter } = item;
     return filter as FilterRule;
   }

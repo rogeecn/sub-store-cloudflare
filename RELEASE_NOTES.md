@@ -1,21 +1,24 @@
-# v0.2.0
+# v0.3.0
 
-Runtime hardening and performance release for Sub-Store Cloudflare.
+Build-time JavaScript compatibility release for Sub-Store Cloudflare.
 
 ## Highlights
 
-- Removes request-time schema work; D1 migrations now own schema changes and built-in templates ship directly with Worker code.
-- Adds hard limits for API bodies and remote responses, hardened security headers, and generic client-facing 500 errors.
-- Removes admin tokens from browser URLs and exports backups through an authenticated blob request.
-- Lazy-loads the settings route and CodeMirror editor to reduce the initial frontend payload.
-- Consolidates the repository into one pnpm workspace and updates the Worker/frontend toolchain.
-- Adds Workers/D1 integration tests, production dependency audits, and a real Worker startup smoke test to `pnpm run check:release`.
-- Keeps the architecture focused on Workers Static Assets + Worker API + D1 + Worker Secrets.
+- Adds JavaScript Filter / Operator modules bundled by Wrangler, without runtime `eval()` or `new Function()`.
+- Supports the upstream-style `filter(proxies, targetPlatform, context)` and `operator(proxies, targetPlatform, context)` contracts with `$arguments`, `$options`, and a bounded `ProxyUtils` subset.
+- Ships two Free-verified built-ins: TLS fingerprint and node-name regex filtering.
+- Adds script selection and metadata-driven arguments to the source and collection action editor.
+- Lets Agent/CLI users compile personal trusted scripts from gitignored local manifests and source directories.
+- Keeps browser-pasted, D1-stored, and remote script source out of the runtime boundary.
+- Adds Worker/D1 integration tests, generated-registry validation, a two-script-per-stage limit, strict output validation, and a no-node-growth rule.
+- Keeps the architecture on Workers Static Assets + Worker API + D1 + Worker Secrets.
 
 ## Install
 
-Use the Deploy to Cloudflare button in `README.md`, or run:
+Use the Deploy to Cloudflare button in `README.md` for the built-in scripts, or run:
 
 ```bash
 pnpm run install:cloudflare
 ```
+
+For personal scripts, follow `docs/script-plugins.md` and redeploy through the Agent/CLI installer.

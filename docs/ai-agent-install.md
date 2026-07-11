@@ -21,6 +21,7 @@ Agent 的主要工作不是手工跑十几条命令，而是：
 - 远程订阅链接。
 - 本地节点文本，例如 `vless://`、`trojan://`、`ss://`、`vmess://`。
 - 想创建哪些组合订阅。
+- 是否需要把个人 JavaScript Filter / Operator 作为构建时代码一起部署。
 - 每个组合订阅包含哪些订阅源。
 - 使用哪套分流模板。
 - 是否需要节点过滤，例如去掉“官网/剩余/流量/倍率”，或只保留某些地区。
@@ -116,6 +117,9 @@ pnpm run install:doctor
 - `cloudflare/wrangler.deploy.local.jsonc`
 - `.dev.vars`
 - `cloudflare/.dev.vars`
+- `config/script-plugins.local.json`
+- `config/scripts.local/`
+- `cloudflare/src/generated/`
 
 结束前运行：
 

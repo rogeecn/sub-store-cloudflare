@@ -1,19 +1,19 @@
 {
   "name": "sub-store-cloudflare",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "check": "pnpm run types:check && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
-    "test": "vitest run",
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy --config wrangler.deploy.local.jsonc",
+    "check": "node ../scripts/generate-script-registry.mjs && pnpm run types:check && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "test": "node ../scripts/generate-script-registry.mjs && vitest run",
+    "dev": "node ../scripts/generate-script-registry.mjs && wrangler dev",
+    "deploy": "node ../scripts/generate-script-registry.mjs && wrangler deploy --config wrangler.deploy.local.jsonc",
     "migrate:local": "wrangler d1 migrations apply sub-store-cloudflare --local --config wrangler.deploy.local.jsonc",
     "migrate:remote": "wrangler d1 migrations apply sub-store-cloudflare --remote --config wrangler.deploy.local.jsonc",
-    "types": "wrangler types ./src/worker-configuration.d.ts --config wrangler.jsonc --env-interface SubStoreEnv --include-runtime false --strict-vars false",
+    "types": "node ../scripts/generate-script-registry.mjs && wrangler types ./src/worker-configuration.d.ts --config wrangler.jsonc --env-interface SubStoreEnv --include-runtime false --strict-vars false",
     "types:check": "wrangler types ./src/worker-configuration.d.ts --config wrangler.jsonc --env-interface SubStoreEnv --include-runtime false --strict-vars false --check"
   },
   "dependencies": {

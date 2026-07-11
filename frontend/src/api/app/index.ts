@@ -24,6 +24,8 @@ const SOURCE_ACTION_TYPES = new Set([
   'Regex Rename Operator',
   'Handle Duplicate Operator',
   'Sort Operator',
+  'Script Filter',
+  'Script Operator',
 ]);
 const SUPPORTED_RESOLVE_PROVIDERS = new Set(['Google', 'Cloudflare', 'Ali', 'Tencent', 'Custom']);
 
@@ -161,6 +163,17 @@ const toApiFilters = (process: unknown) => {
       return [{
         type: 'quick',
         ...(item.args && typeof item.args === 'object' ? item.args : {}),
+      }];
+    }
+
+    if (item.type === 'Script Filter' || item.type === 'Script Operator') {
+      const scriptId = String(item.args?.scriptId || '').trim();
+      if (!scriptId) return [];
+      return [{
+        type: 'script',
+        scriptId,
+        scriptKind: item.type === 'Script Filter' ? 'filter' : 'operator',
+        arguments: item.args?.arguments && typeof item.args.arguments === 'object' ? item.args.arguments : {},
       }];
     }
 
@@ -386,6 +399,18 @@ const fromApiFilters = (filters: unknown): UiProcess[] => {
           },
         });
       }
+
+      if (filter.type === 'script') {
+        output.push({
+          id: newUiId(),
+          type: filter.scriptKind === 'filter' ? 'Script Filter' : 'Script Operator',
+          args: {
+            scriptId: String(filter.scriptId || ''),
+            scriptKind: filter.scriptKind === 'filter' ? 'filter' : 'operator',
+            arguments: filter.arguments && typeof filter.arguments === 'object' ? cloneJson(filter.arguments) : {},
+          },
+        });
+      }
     });
   return output;
 };
@@ -538,6 +563,12 @@ export function useCloudflareApi() {
         url: '/api/templates',
         method: 'get',
       }).then(response => adaptResponseData(response, data => Array.isArray(data) ? data.map(fromApiTemplate) : data));
+    },
+    getScripts: (): AxiosPromise<MyAxiosRes> => {
+      return request({
+        url: '/api/scripts',
+        method: 'get',
+      });
     },
     createTemplate: (data: any): AxiosPromise<MyAxiosRes> => {
       return request({

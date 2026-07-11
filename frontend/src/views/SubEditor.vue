@@ -556,6 +556,7 @@ import { initStores } from "@/utils/initApp";
 import draggable from "vuedraggable";
 import CompareTable from "@/views/CompareTable.vue";
 import ActionBlock from "@/views/editor/ActionBlock.vue";
+import ScriptAction from "@/views/editor/components/ScriptAction.vue";
 import CommonBlock from "@/views/editor/CommonBlock.vue";
 import ActionRadio from "@/views/editor/components/ActionRadio.vue";
 import FilterSelect from "@/views/editor/components/FilterSelect.vue";
@@ -1007,6 +1008,10 @@ watchEffect(() => {
             break;
           case "Handle Duplicate Operator":
             action.component = shallowRef(HandleDuplicate);
+            break;
+          case "Script Filter":
+          case "Script Operator":
+            action.component = shallowRef(ScriptAction);
             break;
           default:
             break;

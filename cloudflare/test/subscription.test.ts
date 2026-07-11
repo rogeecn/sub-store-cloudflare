@@ -56,6 +56,84 @@ describe("subscription parsing and limits", () => {
     expect(payload && typeof payload === "object" ? Reflect.get(payload, "proxies") : undefined).toHaveLength(1);
   });
 
+  it("runs build-time script operators with arguments", async () => {
+    const output = await buildSubscription({
+      source: {
+        id: "script-operator",
+        name: "Script Operator",
+        type: "local",
+        url: "",
+        content: "trojan://password@example.com:443?sni=example.com#Script%20Node",
+        filters: [{
+          type: "script",
+          scriptId: "tls-fingerprint",
+          scriptKind: "operator",
+          arguments: { fingerprint: "firefox" },
+        }],
+      },
+      sources: [],
+      requestUrl: new URL("https://example.com/download/source/script-operator/json"),
+      target: "json",
+    });
+    const payload = JSON.parse(output) as { proxies: Array<Record<string, unknown>> };
+    expect(payload.proxies[0]["tls-fingerprint"]).toBe("firefox");
+  });
+
+  it("runs build-time script filters and rejects unavailable scripts", async () => {
+    const source = {
+      id: "script-filter",
+      name: "Script Filter",
+      type: "local" as const,
+      url: "",
+      content: [
+        "trojan://password@example.com:443#HK%20Node",
+        "trojan://password@example.net:443#US%20Node",
+      ].join("\n"),
+      filters: [{
+        type: "script",
+        scriptId: "name-regex-filter",
+        scriptKind: "filter" as const,
+        arguments: { pattern: "^HK", keep: true },
+      }],
+    };
+    const output = await buildSubscription({
+      source,
+      sources: [],
+      requestUrl: new URL("https://example.com/download/source/script-filter/json"),
+      target: "json",
+    });
+    expect(output).toContain("HK Node");
+    expect(output).not.toContain("US Node");
+
+    await expect(buildSubscription({
+      source: { ...source, filters: [{ type: "script", scriptId: "missing-script" }] },
+      sources: [],
+      requestUrl: new URL("https://example.com/download/source/script-filter/json"),
+      target: "json",
+    })).rejects.toThrow("Unknown script: missing-script");
+  });
+
+  it("limits script actions per processing stage", async () => {
+    await expect(buildSubscription({
+      source: {
+        id: "too-many-scripts",
+        name: "Too Many Scripts",
+        type: "local",
+        url: "",
+        content: "trojan://password@example.com:443#Node",
+        filters: Array.from({ length: 3 }, () => ({
+          type: "script",
+          scriptId: "tls-fingerprint",
+          scriptKind: "operator" as const,
+          arguments: { fingerprint: "chrome" },
+        })),
+      },
+      sources: [],
+      requestUrl: new URL("https://example.com/download/source/too-many-scripts/json"),
+      target: "json",
+    })).rejects.toThrow("At most 2 script actions");
+  });
+
   it("rejects sources with too many remote URLs before fetching", async () => {
     const urls = Array.from({ length: MAX_REMOTE_SOURCE_URLS + 1 }, (_, index) => `https://example.com/${index}`).join("\n");
     await expect(buildSubscription({

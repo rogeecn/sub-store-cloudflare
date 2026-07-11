@@ -238,16 +238,17 @@
 <script lang="ts" setup>
 import i18nFile from '@/locales/zh';
 import { Dialog, Toast } from '@nutui/nutui';
-import { ref, inject, reactive, watch, nextTick, computed } from 'vue';
+import { ref, inject, reactive, watch, nextTick, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Draggable from 'vuedraggable';
 import { useClipboard } from '@vueuse/core';
 import useV3Clipboard from "vue-clipboard3";
+import { useCloudflareApi } from '@/api/app';
 // const { copy, isSupported, text } = useClipboard({ read: true });
 const { copy, isSupported } = useClipboard();
 const { toClipboard: copyFallback } = useV3Clipboard();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const pasteboard = ref("");
 const showPasteboard = ref(false);
 const drag = ref(true);
@@ -278,16 +279,43 @@ const supportedActionTypes = [
   'Regex Rename Operator',
   'Handle Duplicate Operator',
   'Sort Operator',
+  'Script Filter',
+  'Script Operator',
 ];
 const items = types
-  .filter(type => supportedActionTypes.includes(type))
+  .filter(type => supportedActionTypes.includes(type) && type !== 'Script Filter' && type !== 'Script Operator')
   .map(type => {
     return {
       text: t(`editorPage.subConfig.nodeActions['${type}'].label`),
       value: type,
     };
   });
-const columns = ref(items);
+const columns = ref<any[]>(items);
+const cloudflareApi = useCloudflareApi();
+onMounted(async () => {
+  try {
+    const response = await cloudflareApi.getScripts();
+    const payload: any = response?.data;
+    const scripts = Array.isArray(payload?.data) ? payload.data : [];
+    for (const script of scripts) {
+      const type = script.kind === 'filter' ? 'Script Filter' : 'Script Operator';
+      const args = Object.fromEntries(
+        (Array.isArray(script.parameters) ? script.parameters : [])
+          .filter(parameter => parameter?.key)
+          .map(parameter => [parameter.key, parameter.default]),
+      );
+      const scriptName = locale.value.startsWith('zh') && script.nameZh ? script.nameZh : script.name;
+      columns.value.push({
+        text: `${scriptName} · ${t(`editorPage.subConfig.nodeActions['${type}'].label`)}`,
+        value: type,
+        customName: scriptName,
+        args: { scriptId: script.id, scriptKind: script.kind, arguments: args },
+      });
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
 if(isCollapsed.value) {
   collapsedElements.value = list.map((item) => item.id);
 } else {
@@ -326,6 +354,10 @@ const toggleElementCollapsed = (id) => {
   }
 };
 const onButtonClick = (item) => {
+  if ((item.value === 'Script Filter' || item.value === 'Script Operator') && form.process.filter(process => process.type === 'Script Filter' || process.type === 'Script Operator').length >= 2) {
+    Toast.text(t('editorPage.subConfig.actions.script.limit'));
+    return;
+  }
   emit('addAction', [item]);
 };
 
@@ -456,7 +488,7 @@ const pop = (type: string, tipsDes: string) => {
 };
 
 // 操作名称自定义
-const findNameByType = (type) => items.find((item) => item.value === type).text;
+const findNameByType = (type) => columns.value.find((item) => item.value === type)?.text || type;
 const generateEditNameItem = (element) => {
   const { tipsDes, component, ...values } = element;
   return {
