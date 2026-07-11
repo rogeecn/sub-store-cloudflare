@@ -17,6 +17,7 @@ This roadmap is intentionally conservative. The project should stay easy to depl
 - Add focused tests around Worker API behavior and output targets.
 - Tighten docs for common Mihomo, sing-box, URI, and JSON workflows.
 - Improve import/export safety and validation messages.
+- Prototype build-time bundled JavaScript filters/operators against the Cloudflare Workers Free limits. The accepted design is documented in [docs/superpowers/specs/2026-07-11-build-time-script-compatibility-design.md](docs/superpowers/specs/2026-07-11-build-time-script-compatibility-design.md); implementation has not shipped yet.
 - Add screenshots or short GIFs after the UI stabilizes.
 
 ## Later, If Needed
@@ -33,7 +34,7 @@ This roadmap is intentionally conservative. The project should stay easy to depl
 - Gist, GitLab, or third-party sync providers.
 - Sharing platform.
 - Archive/history system.
-- Script runtime or script marketplace.
+- Runtime evaluation of browser-pasted or D1-stored JavaScript, and any script marketplace. Build-time bundled filters/operators are evaluated separately under the accepted Free-compatible design.
 - Log panel.
 - Full upstream Sub-Store API compatibility.
 

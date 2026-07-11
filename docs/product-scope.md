@@ -32,13 +32,19 @@ Sub-Store Cloudflare 是一个云端订阅配置器，不是完整 Sub-Store 的
 
 这些能力都服务于“生成最终订阅链接”这条主线。
 
+## 已接受但尚未实现的方向
+
+项目计划研究构建时打包的 JavaScript Filter / Operator：脚本随 Worker 一起由 Wrangler 编译，D1 只保存脚本 ID 和参数，不在请求期间执行来自网页、D1 或远程 URL 的代码字符串。
+
+这个方向只承诺经过 Cloudflare Workers 免费版性能验证的内置脚本。个人脚本需要通过 Agent / CLI installer 重新部署，并属于部署者信任的应用代码，不是沙箱中的不可信输入。详细设计和兼容边界见 [superpowers/specs/2026-07-11-build-time-script-compatibility-design.md](superpowers/specs/2026-07-11-build-time-script-compatibility-design.md)。在实现、测试和发布完成前，前端和 README 不会把它写成现有功能。
+
 ## 不默认加入的能力
 
 - 文件托管和文件管理。
 - Gist / GitLab / 第三方同步。
 - 分享系统。
 - 归档和历史版本系统。
-- 脚本运行时、脚本过滤器和脚本市场。
+- 运行时脚本字符串、远程脚本加载和脚本市场。构建时打包的受限 Filter / Operator 按上面的免费版设计单独评估。
 - 日志面板。
 - 队列、定时任务、后台 artifact 生成。
 - KV、R2、Durable Objects、Queues、Cron 等额外 Cloudflare 组件。

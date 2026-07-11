@@ -11,6 +11,10 @@ This project follows semantic versioning where practical.
 - Aligned source and collection validation, immutable IDs, partial updates, and empty-collection membership semantics across the Worker, frontend, installer, and documentation.
 - Removed the advertised `surge-mac` target because it had no independent renderer; use `surge` or a supported YAML target instead.
 
+### Documentation
+
+- Documented the accepted, not-yet-implemented design for Free-compatible build-time JavaScript filters and operators, including upstream compatibility levels, deployment paths, security boundaries, and performance gates.
+
 ## [0.2.0] - 2026-07-10
 
 ### Added

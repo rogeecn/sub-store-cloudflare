@@ -2,6 +2,7 @@
 
 - [architecture.md](architecture.md)：Worker + D1 的简化架构、数据模型和输出链路。
 - [product-scope.md](product-scope.md)：项目保留什么、不保留什么，以及如何判断新功能是否属于核心范围。
+- [superpowers/specs/2026-07-11-build-time-script-compatibility-design.md](superpowers/specs/2026-07-11-build-time-script-compatibility-design.md)：已接受但尚未实现的构建时 JavaScript Filter / Operator 兼容设计。
 - [deployment.md](deployment.md)：Cloudflare 一键按钮、Agent/CLI installer、手动 Wrangler 部署。
 - [ai-agent-install.md](ai-agent-install.md)：让 Codex、Claude Code 等 AI Agent 引导部署、导入配置和处理 Cloudflare 缺失状态。
 - [testing.md](testing.md)：本地检查、发布 gate、部署 dry-run 和隐私扫描。
