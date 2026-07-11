@@ -2,149 +2,133 @@
 
 [![Release](https://img.shields.io/github/v/release/realchendahuang/sub-store-cloudflare?include_prereleases&sort=semver)](https://github.com/realchendahuang/sub-store-cloudflare/releases)
 [![License: AGPL-3.0](https://img.shields.io/github/license/realchendahuang/sub-store-cloudflare)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/realchendahuang/sub-store-cloudflare?style=flat)](https://github.com/realchendahuang/sub-store-cloudflare/stargazers)
-[![Forks](https://img.shields.io/github/forks/realchendahuang/sub-store-cloudflare?style=flat)](https://github.com/realchendahuang/sub-store-cloudflare/forks)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/workers/)
 [![D1](https://img.shields.io/badge/Storage-D1-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/d1/)
-[![Node.js >=22](https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-11.7.0-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![Workers Free](https://img.shields.io/badge/Designed_for-Workers_Free-2F7DFF)](docs/upstream-compatibility.md)
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/realchendahuang/sub-store-cloudflare)
 
-A small Cloudflare Workers app for subscription aggregation, cloud-side node processing, and routing templates.
+Run subscription sources, self-hosted nodes, processing actions, and routing templates in your own Cloudflare Worker, then give each client one final subscription URL.
 
-Chinese is the primary documentation language for this repository. See [README.md](README.md).
+The app uses Workers Static Assets + Worker API + D1 + Worker Secrets and is designed around Workers Free limits. It does not require a separate server, KV, R2, Durable Objects, Queues, or Cron.
 
-## Docs
+Chinese is the primary documentation language: [README.md](README.md).
 
-- [Deployment](docs/deployment.md)
-- [AI Agent install](docs/ai-agent-install.md)
-- [Product scope](docs/product-scope.md)
-- [Architecture](docs/architecture.md)
-- [Upstream compatibility matrix](docs/upstream-compatibility.md)
-- [Testing and release gates](docs/testing.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Release process](docs/release.md)
-- [Roadmap](ROADMAP.md)
-- [Governance](GOVERNANCE.md)
-- [Contributing](CONTRIBUTING.md)
-- [Support](SUPPORT.md)
-- [Security](SECURITY.md)
-- [Changelog](CHANGELOG.md)
+## Fastest install: three steps
 
-## Fastest Install
+### 1. Prepare two different random tokens
 
-### Deploy to Cloudflare
-
-Click the button above. Cloudflare will clone this public repository into your GitHub/GitLab account, provision the Worker and D1 database, and deploy the app.
-
-The deployment flow asks for two secrets:
-
-- `SUB_STORE_ADMIN_TOKEN`: admin UI and `/api/*` token.
-- `SUB_STORE_PUBLIC_DOWNLOAD_TOKEN`: `/download/*` subscription token.
-
-Generate tokens with:
+Use a password manager, or run this cross-platform Node.js command:
 
 ```bash
-openssl rand -base64 32
+node -e "const{randomBytes:r}=require('node:crypto');console.log(r(32).toString('base64url'));console.log(r(32).toString('base64url'))"
 ```
 
-Open the deployed app with:
+Use the first line for `SUB_STORE_ADMIN_TOKEN` and the second for `SUB_STORE_PUBLIC_DOWNLOAD_TOKEN`. Never deploy fixed values copied from documentation or screenshots.
+
+### 2. Click Deploy to Cloudflare
+
+Cloudflare imports a repository copy into your GitHub/GitLab account, provisions the Worker and D1 database, asks for the two required secrets, and runs `pnpm run build` followed by `pnpm run deploy`.
+
+Both secret fields must contain the different random values you generated.
+
+### 3. Open the admin UI
+
+Open the Worker URL returned by Cloudflare and append:
 
 ```text
-https://<your-worker>.<your-subdomain>.workers.dev/?token=<admin-token>
+/?token=<SUB_STORE_ADMIN_TOKEN>
 ```
 
-Then add sources, collections, filters, and templates in the web UI.
+The first-run screen guides you through Source → default Daily collection → client download link.
 
-Note: this is Cloudflare's hosted template import flow. Cloudflare may configure Workers Builds inside your copied repository for future deployments. This upstream repository does not use GitHub Actions, Dependabot, or GitHub CI/CD.
+See the Chinese [five-minute quick start](docs/quick-start.md) for the complete walkthrough.
 
-### Agent / CLI Install
+## Choose an install path
 
-For local agent-assisted installs with seeded sources and collections:
+| Need | Recommended path | Entry point |
+| --- | --- | --- |
+| Fastest empty deployment, configure in the browser | Deploy to Cloudflare | Button above |
+| Guided terminal deployment | Interactive CLI | `pnpm run install:cloudflare` |
+| Empty CLI deployment, configure in the browser | CLI quick mode | `pnpm run install:quick` |
+| Import sources through Codex or Claude Code | Agent install | [Install prompt](agent/install.prompt.md) |
+| Full control over D1, secrets, and domains | Manual Wrangler | [Deployment guide](docs/deployment.md) |
+
+### Interactive CLI
+
+Requires Git, Node.js 22+, and Corepack:
 
 ```bash
+git clone https://github.com/realchendahuang/sub-store-cloudflare.git
+cd sub-store-cloudflare
+corepack enable
 pnpm run install:cloudflare
 ```
 
-The installer validates the local setup, checks Cloudflare login, creates or reuses D1, renders local Wrangler config, sets Worker secrets, migrates D1, deploys the Worker, imports `config/agent-setup.local.json`, verifies HTTP endpoints, and prints ready-to-copy URLs. Generated tokens are persisted in the gitignored local setup so a failed run does not silently rotate them.
+The installer can collect deployment names, domains, and optional remote subscription URLs. It then installs dependencies, checks Cloudflare login, creates or reuses D1, generates tokens, migrates, deploys, seeds, verifies, and prints ready-to-copy URLs.
 
-If Cloudflare is not available yet:
+For an empty web-configured deployment:
 
 ```bash
-pnpm --dir cloudflare exec wrangler login
-pnpm run install:cloudflare
+pnpm run install:quick
 ```
 
-For Codex, Claude Code, or another local coding agent, copy [agent/install.prompt.md](agent/install.prompt.md).
-
-## What It Does
-
-- Manages remote subscription URLs and local node text.
-- Combines multiple sources into one cloud-side collection.
-- Filters by region, type, and regex; renames, deletes matched name text, deduplicates, regex-sorts, resolves node hostnames, adds/removes flags, and applies common node options.
-- Runs JavaScript filters/operators bundled with the Worker; built-ins are selectable in the UI and personal scripts are redeployed through the CLI installer.
-- Provides built-in Mihomo routing templates and supports custom JSON/YAML templates.
-- Previews original and processed node lists in the admin UI.
-- Supports subscription usage info, config backup/restore, User-Agent options, pass-through User-Agent, timeout, and remote fetch concurrency.
-- Supports temporary `url`, `content`, and `ua` download parameters for one-off conversion.
-- Adds an admin Tools page for unsaved proxy/subscription conversion and Mihomo, Surge, Loon, and Quantumult X rule conversion.
-- Provides scoped expiring download grants, a bounded 50-entry recycle bin, allowlisted response metadata propagation, and optional Workers Cache API caching.
-- Looks up node IP, region, organization, and ASN through a configurable HTTPS provider.
-- Outputs Mihomo, Stash, Surge, Surge Mac, Surfboard, Loon, Egern, Shadowrocket, Quantumult X, sing-box, v2ray, URI, and JSON.
-
-Source, collection, and custom template IDs use 1–64 lowercase letters, numbers, underscores, or hyphens. An empty collection `sourceIds` array means all enabled sources; list IDs explicitly to select only specific sources.
-
-The deployment model remains small: Workers Static Assets + Worker API + D1 + Worker Secrets, with the Cache API as an optional non-durable optimization.
-
-## Local Development
-
-Requires Node.js 22 and pnpm 11. This repository includes `.node-version` and a `packageManager` field.
+Generate both deployment tokens with:
 
 ```bash
+pnpm run tokens:generate
+```
+
+Non-interactive Agent runs without `config/agent-setup.local.json` stop before deployment instead of importing example subscription URLs.
+
+## First five minutes after deployment
+
+1. Add a remote subscription or local node text on the Subscriptions page.
+2. Review the pre-created `Daily` Collection; create another only when needed. `acl4ssr-mihomo` is the recommended template.
+3. Start with cleanup, endpoint dedupe, and name sorting filters.
+4. Copy the Mihomo, sing-box, Surge, or other link from the Collection card.
+5. Export a backup from Settings and store both tokens safely.
+
+## Highlights
+
+- Remote sources, local nodes, collections, filters, and routing templates.
+- Build-time JavaScript Filter / Operator support without runtime `eval()`.
+- JSON/JSON5, Mihomo YAML, URI, and common Surge/Loon/Quantumult X input.
+- Mihomo, Stash, Surge, Surge Mac, Surfboard, Loon, Egern, Shadowrocket, Quantumult X, sing-box, v2ray, URI, and JSON output.
+- One-shot proxy/subscription and rule conversion tools.
+- Scoped expiring download grants and a bounded 50-entry recycle bin.
+- Safe subscription metadata propagation, optional Cache API caching, backup/restore, and node location/ASN lookup.
+
+See the [upstream compatibility matrix](docs/upstream-compatibility.md) for tested support and explicit exclusions.
+
+## Upgrades
+
+A Deploy Button install creates a repository copy in your account; upstream releases are not merged automatically. Do not create a second Worker and D1 database as the default upgrade method.
+
+See [docs/upgrading.md](docs/upgrading.md) for repository sync, D1 migrations, backups, and rollback.
+
+## Documentation
+
+- [Five-minute quick start](docs/quick-start.md)
+- [Deployment](docs/deployment.md)
+- [Upgrading](docs/upgrading.md)
+- [AI Agent install](docs/ai-agent-install.md)
+- [JavaScript Filter / Operator](docs/script-plugins.md)
+- [Compatibility matrix](docs/upstream-compatibility.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Architecture](docs/architecture.md)
+- [All docs](docs/README.md)
+
+## Local development
+
+```bash
+corepack enable
 pnpm run setup
 cp cloudflare/.dev.vars.example cloudflare/.dev.vars
 pnpm run build:frontend
 pnpm run dev
 ```
 
-Open:
+Open `http://localhost:8787/?token=dev-admin-token`.
 
-```text
-http://localhost:8787/?token=dev-admin-token
-```
-
-## Manual Deploy
-
-```bash
-pnpm run setup
-pnpm --dir cloudflare exec wrangler login
-pnpm --dir cloudflare exec wrangler d1 create sub-store-cloudflare
-cp config/agent-setup.example.json config/agent-setup.local.json
-pnpm run deploy:config -- config/agent-setup.local.json cloudflare/wrangler.deploy.local.jsonc --database-id <database-id>
-pnpm --dir cloudflare exec wrangler secret put SUB_STORE_ADMIN_TOKEN --config wrangler.deploy.local.jsonc
-pnpm --dir cloudflare exec wrangler secret put SUB_STORE_PUBLIC_DOWNLOAD_TOKEN --config wrangler.deploy.local.jsonc
-pnpm run migrate:remote
-pnpm run deploy:local
-```
-
-See [docs/deployment.md](docs/deployment.md) and [docs/ai-agent-install.md](docs/ai-agent-install.md).
-
-## Release Checks
-
-```bash
-pnpm run check:release
-pnpm run deploy:dry-run
-```
-
-These local commands are the release gate. They cover Worker and test types, Workers/D1 integration tests, the frontend production build, production dependency audits, a real local Worker startup smoke test, deploy contracts, and privacy checks. The upstream repository intentionally does not use GitHub Actions or Dependabot.
-
-## Acknowledgements
-
-This project is inspired by and pays respect to [sub-store-org/Sub-Store](https://github.com/sub-store-org/Sub-Store). The original project is the full-featured subscription management system; this repository focuses on a smaller Cloudflare-native deployment.
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=realchendahuang/sub-store-cloudflare&type=Date)](https://www.star-history.com/#realchendahuang/sub-store-cloudflare&Date)
-
-See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Never commit subscription URLs, node URIs, tokens, private D1 IDs, or generated seed SQL. See [SECURITY.md](SECURITY.md), [LICENSE](LICENSE), and [NOTICE](NOTICE).

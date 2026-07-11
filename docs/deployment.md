@@ -1,5 +1,7 @@
 # 部署说明
 
+第一次部署优先阅读 [五分钟快速开始](quick-start.md)。升级已有部署请阅读 [升级指南](upgrading.md)。
+
 这个仓库有三种部署路径：
 
 1. Cloudflare 官方一键部署按钮：最适合普通开源用户。
@@ -23,11 +25,13 @@ Cloudflare 会读取根目录 [../wrangler.jsonc](../wrangler.jsonc)，自动 pr
 - `SUB_STORE_ADMIN_TOKEN`
 - `SUB_STORE_PUBLIC_DOWNLOAD_TOKEN`
 
-生成 token：
+跨平台生成两个 token：
 
 ```bash
-openssl rand -base64 32
+node -e "const{randomBytes:r}=require('node:crypto');console.log(r(32).toString('base64url'));console.log(r(32).toString('base64url'))"
 ```
+
+第一行用于 admin token，第二行用于 download token。两个值必须不同。仓库根目录不提供 `.dev.vars.example`，避免 Cloudflare 部署表单把公开占位字符串当作 Secret 默认值。
 
 部署后进入：
 
@@ -45,10 +49,22 @@ https://<worker>.<workers-subdomain>.workers.dev/?token=<admin-token>
 
 ## 2. Agent / CLI 一键安装
 
-本地安装器入口：
+交互式安装器入口：
 
 ```bash
 pnpm run install:cloudflare
+```
+
+如果没有 `config/agent-setup.local.json`，真实终端会进入简短引导，询问 Worker、D1、自定义域名和可选远程订阅 URL。只想部署空应用并在网页配置：
+
+```bash
+pnpm run install:quick
+```
+
+单独生成两个项目自带的跨平台 Token：
+
+```bash
+pnpm run tokens:generate
 ```
 
 它会执行：
@@ -66,6 +82,8 @@ pnpm run install:cloudflare
 - 在构建前生成 JavaScript 脚本注册表；如果存在本地个人脚本清单，会一起编译进 Worker。
 
 如果配置里没有 token，安装器会本地生成，并写回被 Git 忽略的 `config/agent-setup.local.json`。这样部署中途失败后可以安全重跑，不会因为 token 自动轮换导致前后不一致。HTTP 验证任一失败时命令会以非零状态退出，并打印当前进度和恢复命令；不要把仅完成 `wrangler deploy` 当成完整成功。
+
+非交互 Agent 环境缺少 setup 文件时，安装器会生成示例文件并停止，不会把 `example.com` 订阅地址部署到生产。Agent 必须写好真实 setup 后重新运行。`--quick` 只适合明确要在网页中配置的空部署。
 
 如果没有 Cloudflare 账号或还没登录：
 
@@ -254,16 +272,9 @@ https://substore.example.com/download/source/<source-id>/uri?token=<download-tok
 
 远程订阅默认边缘缓存 300 秒。可以在“设置 → 请求设置”中把 TTL 设为 `0` 关闭，或者给下载链接添加 `refresh=1` 强制刷新。Cache API 不可用时 Worker 会直接请求上游。
 
-## 从旧版本升级到 v1.0.0
+## 从旧版本升级
 
-继续使用原来的 D1 和 Worker Secrets，执行正常部署即可：
-
-```bash
-pnpm run migrate:remote
-pnpm run deploy:local
-```
-
-`0003_compatibility_resources.sql` 会新增 `download_grants` 和 `recycle_bin`，不会修改现有 Sources、Collections、Templates 或 Settings。部署后可以在“工具”页使用一次性转换、独立下载授权和回收站。
+继续使用原来的 Worker、D1 和 Worker Secrets。Deploy Button 仓库副本不会自动获得上游版本；完整同步、migration、备份和回滚步骤见 [升级指南](upgrading.md)。
 
 ## 8. 备份与恢复
 

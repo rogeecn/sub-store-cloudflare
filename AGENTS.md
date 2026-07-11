@@ -30,6 +30,8 @@ There are two supported install paths:
 
 Prefer the installer over manually running every deployment command.
 
+For a human empty install, `pnpm run install:quick` may deploy first and let the user configure in the web UI. Do not use quick mode when an Agent was asked to import Sources or Collections. A non-interactive installer run without `config/agent-setup.local.json` must stop before deployment.
+
 ## Privacy Rules
 
 - Never commit subscription URLs, node URIs, admin tokens, download tokens, database ids from private deployments, or generated seed SQL that contains user data.
@@ -98,6 +100,7 @@ Ask only for missing inputs. Prefer reasonable defaults when the user does not c
    - Use 1-64 lowercase letters, numbers, underscores, or hyphens for record ids.
    - Prefer `filterPresetIds` from `config/rule-presets.json` for common filters.
    - Validate with `pnpm run seed:validate`.
+   - Do not rely on the installer to deploy `config/agent-setup.example.json`; missing non-interactive setup is a handoff state.
 3. Deploy with one command:
    - `pnpm run install:cloudflare`
 4. Verify installer output:

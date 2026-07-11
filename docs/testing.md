@@ -21,6 +21,15 @@ pnpm run check:release
 pnpm run deploy:dry-run
 ```
 
+部署体验相关的独立检查：
+
+```bash
+pnpm run check:installer
+pnpm run check:deploy-experience
+```
+
+它们验证 CLI 快速配置生成、URL 校验、默认组合逻辑、Deploy Button Secret 安全默认、root Wrangler bindings、README 快速入口和升级链接。
+
 `check:release` covers:
 
 - Worker TypeScript.
@@ -50,6 +59,8 @@ pnpm run check:runtime
 pnpm run check:scripts
 pnpm run check:frontend
 pnpm run check:agent
+pnpm run check:installer
+pnpm run check:deploy-experience
 pnpm run check:worker-contract
 pnpm run check:docs
 pnpm run check:open-source

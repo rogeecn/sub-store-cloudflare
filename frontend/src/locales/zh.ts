@@ -126,6 +126,20 @@ export default {
       desc: "添加远程订阅或本地节点后开始聚合",
       btn: "立即添加"
     },
+    onboarding: {
+      welcome: "首次使用",
+      title: "三步生成你的第一个订阅链接",
+      desc: "数据保存在你自己的 Cloudflare D1 中。先添加订阅源，再创建组合订阅，最后复制链接到客户端。",
+      addSource: "添加远程订阅或本地节点",
+      addCollection: "确认默认 Daily，或新建组合订阅",
+      copyLink: "复制 Mihomo、sing-box 等下载链接",
+      createSource: "添加第一个订阅源",
+      openGuide: "查看五分钟快速开始",
+      step2: "下一步 · 2/3",
+      collectionTitle: "创建一个组合订阅",
+      collectionDesc: "如果默认 Daily 已被删除，可以重新创建组合订阅，合并、去重并套用分流模板。",
+      createCollection: "创建组合订阅"
+    },
     loadFailed: {
       title: "数据加载失败",
       desc: "如果刚完成部署，请先输入管理 Token；否则请检查 Worker API 和网络连接。",

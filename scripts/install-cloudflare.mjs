@@ -1,6 +1,9 @@
 import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
+import { createInterface } from "node:readline/promises";
+
+import { createQuickSetup, parseRemoteSourceUrls } from "./lib/install-setup.mjs";
 
 const args = process.argv.slice(2);
 const flags = new Set(args.filter((arg) => arg.startsWith("--")));
@@ -28,26 +31,27 @@ const state = {
   verified: false,
 };
 
-main();
+await main();
 
-function main() {
+async function main() {
   banner("Sub-Store Cloudflare installer");
   const doctorOnly = flags.has("--doctor");
 
   checkCommand("node", ["--version"], { label: "Node.js" });
   checkCommand("pnpm", ["--version"], { label: "pnpm" });
   checkCommand("curl", ["--version"], { label: "curl" });
-  run("pnpm", ["run", "setup"], { label: "Install frontend and Worker dependencies", skip: doctorOnly });
-  checkCommand("pnpm", ["--dir", "cloudflare", "exec", "wrangler", "--version"], { label: "Wrangler" });
 
   if (doctorOnly) {
+    checkCommand("pnpm", ["--dir", "cloudflare", "exec", "wrangler", "--version"], { label: "Wrangler" });
     checkWranglerLogin({ soft: true });
     maybePrintSetupStatus();
     info("Doctor finished. Run `pnpm run install:cloudflare` to deploy.");
     return;
   }
 
-  ensureSetupFile();
+  await ensureSetupFile();
+  run("pnpm", ["run", "setup"], { label: "Install frontend and Worker dependencies" });
+  checkCommand("pnpm", ["--dir", "cloudflare", "exec", "wrangler", "--version"], { label: "Wrangler" });
   const setup = readSetup();
   run("pnpm", ["run", "seed:validate"], { label: "Validate seed setup" });
   const deployment = setup.deployment && typeof setup.deployment === "object" ? setup.deployment : {};
@@ -111,15 +115,72 @@ function main() {
   }
 }
 
-function ensureSetupFile() {
+async function ensureSetupFile() {
   if (existsSync(SETUP_PATH)) return;
+
+  if (flags.has("--quick")) {
+    const setup = createQuickSetup({
+      workerName: options.workerName,
+      d1DatabaseName: options.d1DatabaseName,
+      adminHostname: options.adminHostname,
+      downloadHostname: options.downloadHostname,
+      sourceUrls: parseRemoteSourceUrls(options.sourceUrls),
+    });
+    writeSetup(setup);
+    state.createdSetup = true;
+    info(`Created quick setup at ${SETUP_PATH}.`);
+    if (setup.sources.length === 0) {
+      info("No sources were provided. Add them in the admin UI after deployment.");
+    }
+    return;
+  }
+
+  if (process.stdin.isTTY && process.stdout.isTTY && !flags.has("--non-interactive")) {
+    writeSetup(await promptForSetup());
+    state.createdSetup = true;
+    info(`Saved guided setup to ignored file ${SETUP_PATH}.`);
+    return;
+  }
+
   copyFileSync(SETUP_EXAMPLE_PATH, SETUP_PATH);
   state.createdSetup = true;
   warn(`${SETUP_PATH} was created from ${SETUP_EXAMPLE_PATH}.`);
-  warn("Edit it with your real sources and collections, then rerun `pnpm run install:cloudflare`.");
-  if (!flags.has("--use-example-setup")) {
-    process.exit(2);
+  warn("This non-interactive run stopped before deployment so example subscription URLs are never deployed.");
+  warn("Edit the file with real sources and collections, then rerun `pnpm run install:cloudflare`.");
+  warn("For an empty deployment configured later in the web UI, run `pnpm run install:cloudflare -- --quick`.");
+  process.exit(2);
+}
+
+async function promptForSetup() {
+  banner("Quick setup");
+  info("Press Enter to accept defaults. Subscription URLs are saved only in the ignored local setup file.");
+  const prompt = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const workerName = await ask(prompt, "Worker name", "sub-store-cloudflare");
+    const d1DatabaseName = await ask(prompt, "D1 database name", "sub-store-cloudflare");
+    const adminHostname = await ask(prompt, "Custom admin hostname (optional)", "");
+    const downloadHostname = await ask(prompt, "Separate download hostname (optional)", "");
+    const sourceInput = await ask(prompt, "Remote subscription URLs, separated by spaces or commas (optional)", "");
+    return createQuickSetup({
+      workerName,
+      d1DatabaseName,
+      adminHostname,
+      downloadHostname,
+      sourceUrls: parseRemoteSourceUrls(sourceInput),
+    });
+  } finally {
+    prompt.close();
   }
+}
+
+async function ask(prompt, label, fallback) {
+  const suffix = fallback ? ` [${fallback}]` : "";
+  const answer = (await prompt.question(`${label}${suffix}: `)).trim();
+  return answer || fallback;
+}
+
+function writeSetup(setup) {
+  writeFileSync(SETUP_PATH, `${JSON.stringify(setup, null, 2)}\n`);
 }
 
 function readSetup() {
@@ -314,7 +375,10 @@ function checkWranglerLogin({ soft }) {
 
 function maybePrintSetupStatus() {
   if (!existsSync(SETUP_PATH)) {
-    warn(`${SETUP_PATH} is missing. The installer will create it from ${SETUP_EXAMPLE_PATH}.`);
+    warn(`${SETUP_PATH} is missing.`);
+    info("Interactive terminals will open the guided setup.");
+    info("Non-interactive Agents should write the file before deployment.");
+    info("Use `pnpm run install:cloudflare -- --quick` for an empty web-configured deployment.");
     return;
   }
   run("pnpm", ["run", "seed:validate"], { label: "Validate local setup", soft: true });

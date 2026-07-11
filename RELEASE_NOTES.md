@@ -1,27 +1,28 @@
-# v1.0.0
+# v1.1.0
 
-Cloudflare-native upstream compatibility major release.
+Safer and faster first deployment for Sub-Store Cloudflare.
 
 ## Highlights
 
-- Adds JSON5 input, Surge Mac output, and broader Surge/Loon/QX client-line compatibility including Snell, SSH, and H2 CONNECT.
-- Adds a Tools page for one-shot proxy/subscription conversion and rule conversion without saving content to D1.
-- Adds safe subscription metadata propagation and optional Workers Cache API caching with hashed keys, configurable TTL, forced refresh, conditional requests, and stale fallback.
-- Adds private scoped download grants with target restrictions, expiration, revocation, and one-time plaintext token display.
-- Adds a bounded 50-entry recycle bin for deleted configuration.
-- Adds configurable HTTPS node location and ASN lookup in preview.
-- Preserves the v0.3.0 build-time JavaScript Filter / Operator model.
-- Keeps the deployment on Workers Static Assets + Worker API + D1 + Worker Secrets. No KV, R2, Durable Objects, Queues, Cron, runtime script strings, general file hosting, artifact repository, or persistent request logs are required.
+- Fixes a Deploy to Cloudflare security footgun where public placeholder values from the root `.dev.vars.example` could appear as already-filled required secrets.
+- Rebuilds the Chinese and English README files around a three-step Deploy Button path and a clear install-method decision table.
+- Adds `pnpm run tokens:generate` for cross-platform admin and download token generation.
+- Adds a guided `pnpm run install:cloudflare` flow for human terminals.
+- Adds `pnpm run install:quick` for an intentional empty deployment configured later in the browser.
+- Keeps Agent installs safe: a missing private setup in a non-interactive environment stops before example URLs can be deployed.
+- Adds a first-run admin checklist for Source → Collection → client link.
+- Adds dedicated quick-start and upgrade guides covering repository copies, Workers Builds, D1 migrations, backup, verification, and rollback.
+- Adds installer helper tests and a deployment-experience release gate.
 
 ## Upgrade
 
-Existing deployments keep their D1 database and Worker Secrets. Apply migrations and deploy normally:
+Keep the existing Worker, D1 database, and Worker Secrets. Update the repository and deploy normally:
 
 ```bash
-pnpm run migrate:remote
-pnpm run deploy:local
+git pull --ff-only
+pnpm run install:cloudflare
 ```
 
-Migration `0003_compatibility_resources.sql` adds scoped download grants and recycle-bin tables without replacing existing sources, collections, templates, or settings.
+Deploy Button repository copies do not receive upstream releases automatically. See `docs/upgrading.md` before merging upstream into a deployed copy.
 
-See `docs/upstream-compatibility.md` for the tested compatibility matrix and explicit platform exclusions.
+No new D1 migration is required for v1.1.0.

@@ -103,7 +103,7 @@
 
     <!-- 页面内容 -->
     <!-- 有数据 -->
-    <div class="subs-list-wrapper" :class="{ 'dual-column-mode': isDualColumnMode }">
+    <div v-if="hasSubs" class="subs-list-wrapper" :class="{ 'dual-column-mode': isDualColumnMode }">
       <div v-if="tags && tags.length > 0" ref="radioWrapperRef" class="radio-wrapper" >
         <!-- <nut-radiogroup v-model="tag" direction="horizontal"> -->
           <!-- <nut-radio v-for="i in tags" shape="button" :label="String(i.value)">{{ i.label }}</nut-radio> -->
@@ -111,6 +111,16 @@
         <!-- </nut-radiogroup> -->
       </div>
       <div class="subs-list-container" :style="{ paddingTop: `${radioWrapperHeight}px` }">
+        <section v-if="hasSubs && !hasCollections" class="onboarding-card onboarding-inline">
+          <div>
+            <span class="onboarding-kicker">{{ $t('subPage.onboarding.step2') }}</span>
+            <h3>{{ $t('subPage.onboarding.collectionTitle') }}</h3>
+            <p>{{ $t('subPage.onboarding.collectionDesc') }}</p>
+          </div>
+          <router-link to="/edit/collections/UNTITLED" class="onboarding-action">
+            <nut-button type="primary" size="small">{{ $t('subPage.onboarding.createCollection') }}</nut-button>
+          </router-link>
+        </section>
         <div v-if="filterdSubsCount > 0" class="subs-list-content">
           <div class="title-wrappers">
             <p class="list-title" @click="toggleFold('sub')">
@@ -199,21 +209,28 @@
     </div>
     <!-- 没有数据 -->
     <div
-      v-if="!isLoading && fetchResult && !hasSubs && !hasCollections"
+      v-if="!isLoading && fetchResult && !hasSubs"
       class="empty-state-wrapper"
     >
-      <nut-empty>
-        <template #image>
-          <img class="empty-state-image" :src="logoRedIcon" alt="" />
-        </template>
-        <template #description>
-          <h3>{{ $t(`subPage.emptySub.title`) }}</h3>
-          <p>{{ $t(`subPage.emptySub.desc`) }}</p>
-        </template>
-      </nut-empty>
-      <nut-button type="primary" @click="addSubBtnIsVisible = true">
-        {{ $t(`subPage.emptySub.btn`) }}
-      </nut-button>
+      <section class="onboarding-card onboarding-empty">
+        <img class="empty-state-image" :src="logoRedIcon" alt="" />
+        <span class="onboarding-kicker">{{ $t('subPage.onboarding.welcome') }}</span>
+        <h3>{{ $t('subPage.onboarding.title') }}</h3>
+        <p class="onboarding-desc">{{ $t('subPage.onboarding.desc') }}</p>
+        <ol class="onboarding-steps">
+          <li><strong>1</strong><span>{{ $t('subPage.onboarding.addSource') }}</span></li>
+          <li><strong>2</strong><span>{{ $t('subPage.onboarding.addCollection') }}</span></li>
+          <li><strong>3</strong><span>{{ $t('subPage.onboarding.copyLink') }}</span></li>
+        </ol>
+        <div class="onboarding-buttons">
+          <router-link to="/edit/subs/UNTITLED" class="onboarding-action">
+            <nut-button type="primary">{{ $t('subPage.onboarding.createSource') }}</nut-button>
+          </router-link>
+          <a href="https://github.com/realchendahuang/sub-store-cloudflare/blob/main/docs/quick-start.md" target="_blank" rel="noreferrer">
+            {{ $t('subPage.onboarding.openGuide') }}
+          </a>
+        </div>
+      </section>
     </div>
 
     <!-- 数据加载失败 -->
@@ -688,6 +705,114 @@ const importTips = () => {
   width: 96px;
   height: 96px;
   object-fit: contain;
+}
+
+.onboarding-card {
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 24%, var(--divider-color));
+  border-radius: var(--item-card-radios);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 8%, var(--card-color)), var(--card-color));
+  color: var(--second-text-color);
+
+  h3 {
+    margin: 4px 0 6px;
+    color: var(--primary-text-color);
+    font-size: 18px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--comment-text-color);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
+.onboarding-empty {
+  width: min(calc(100% - 32px), 560px);
+  padding: 24px;
+  text-align: center;
+}
+
+.onboarding-inline {
+  width: calc(100% - 1.5rem);
+  margin: 12px auto 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.onboarding-kicker {
+  color: var(--primary-color);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.onboarding-desc {
+  max-width: 460px;
+  margin: 0 auto !important;
+}
+
+.onboarding-steps {
+  margin: 18px 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--background-color);
+    color: var(--second-text-color);
+    font-size: 12px;
+    text-align: left;
+  }
+
+  strong {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+  }
+}
+
+.onboarding-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+
+  a:not(.onboarding-action) {
+    color: var(--primary-color);
+    font-size: 13px;
+  }
+}
+
+.onboarding-action {
+  display: inline-flex;
+}
+
+@media (max-width: 520px) {
+  .onboarding-inline {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .onboarding-steps {
+    grid-template-columns: 1fr;
+  }
 }
 
 .load-failed-actions {

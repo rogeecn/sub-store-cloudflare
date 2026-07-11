@@ -23,6 +23,18 @@ pnpm run deploy:dry-run
 pnpm --dir cloudflare exec wrangler whoami
 ```
 
+## Deploy Button 的 Secret 已经被填满
+
+正常情况下，`SUB_STORE_ADMIN_TOKEN` 和 `SUB_STORE_PUBLIC_DOWNLOAD_TOKEN` 需要你自己填写两个不同的随机值。
+
+如果输入框出现 `replace-with-...`、`example` 或其他公开固定字符串，不要点击部署。这通常表示部署源仍包含会被 Cloudflare 读取的根目录 `.dev.vars.example`。请确认使用仓库最新版本并提交 issue。
+
+跨平台生成随机值：
+
+```bash
+node -e "const{randomBytes:r}=require('node:crypto');console.log(r(32).toString('base64url'));console.log(r(32).toString('base64url'))"
+```
+
 ## 没有 Cloudflare 账号
 
 这个项目必须运行在 Cloudflare Workers + D1 上。可以先阅读文档和准备本地配置，但不能完成线上部署。
@@ -98,6 +110,25 @@ pnpm --dir cloudflare exec wrangler secret put SUB_STORE_PUBLIC_DOWNLOAD_TOKEN -
 pnpm run seed:validate
 pnpm run seed:render
 pnpm run seed:remote
+```
+
+也可以直接按管理端首次使用卡片完成 Source → Collection → 下载链接。
+
+## CLI 第一次运行时没有 setup 文件
+
+真实交互式终端会打开快速引导。非交互 Agent 环境会创建 `config/agent-setup.local.json` 示例并停止，这是为了避免把示例订阅 URL 部署到生产。
+
+三种继续方式：
+
+```bash
+# 编辑真实 Sources / Collections 后继续
+pnpm run install:cloudflare
+
+# 明确部署空应用，之后在网页配置
+pnpm run install:quick
+
+# 只检查环境
+pnpm run install:doctor
 ```
 
 ## 下载链接返回 401

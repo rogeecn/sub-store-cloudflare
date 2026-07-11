@@ -102,6 +102,8 @@ pnpm run install:cloudflare
 
 安装器会自动执行验证、部署、seed import 和 HTTP smoke test。任一 HTTP 验证失败都会以非零状态退出，并给出恢复命令；Agent 不能把这种状态报告为部署成功。
 
+Agent 运行通常是非交互环境，因此必须在执行安装器前写好 `config/agent-setup.local.json`。如果缺少文件，安装器会创建示例并停止，绝不会自动部署示例 URL。不要用 `install:quick` 代替用户要求的 Sources / Collections 导入。
+
 如果只想检查环境：
 
 ```bash

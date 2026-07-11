@@ -19,6 +19,7 @@ Follow AGENTS.md and agent/SKILL.md in this repository. Deploy this Sub-Store Cl
 ## Operating Rules
 
 - Prefer the one-command installer: `pnpm run install:cloudflare`.
+- Do not use `pnpm run install:quick` when the user asked to import Sources or Collections.
 - Ask for missing inputs instead of inventing subscription data.
 - Use `config/agent-setup.local.json` as the single private setup file.
 - Use 1-64 lowercase letters, numbers, underscores, or hyphens for source, collection, and custom template ids.
@@ -48,3 +49,5 @@ Follow AGENTS.md and agent/SKILL.md in this repository. Deploy this Sub-Store Cl
 - Cloudflare unreachable: stop at handoff and tell the user to rerun `pnpm run install:cloudflare`.
 
 Never report deployment success until the installer has deployed and verified the Worker.
+
+The installer is intentionally non-destructive in Agent environments: if the private setup file is missing, it creates an example and stops before deployment. Fill the real setup and rerun instead of forcing example data into production.

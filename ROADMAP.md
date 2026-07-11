@@ -14,14 +14,14 @@ This roadmap is intentionally conservative. The project should stay easy to depl
 - JSON5 and broader client-line parsing, Surge Mac output, and one-shot proxy/rule conversion.
 - Allowlisted remote metadata propagation and optional Workers Cache API caching.
 - Scoped expiring download grants and a bounded D1 recycle bin.
+- Safe blank-secret Deploy Button flow, guided/quick CLI installs, first-run onboarding, and explicit upgrade documentation.
 
 ## Near-Term Priorities
 
-- Improve deployment troubleshooting and diagnostics.
+- Add screenshots or a short deployment GIF after the v1.1 onboarding layout stabilizes.
 - Add focused tests around Worker API behavior and output targets.
 - Tighten docs for common Mihomo, sing-box, URI, and JSON workflows.
 - Improve import/export safety and validation messages.
-- Add screenshots or short GIFs after the UI stabilizes.
 - Expand tested parser/producer fixtures as upstream adds protocols and transport fields.
 
 ## Later, If Needed

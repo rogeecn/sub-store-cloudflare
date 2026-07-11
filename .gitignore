@@ -37,7 +37,7 @@ cloudflare/src/generated/
 # Local runtime state and secrets
 .dev.vars
 .dev.vars*
-!.dev.vars.example
+!cloudflare/.dev.vars.example
 *.pem
 *.key
 *.p12

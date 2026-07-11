@@ -16,7 +16,7 @@ Run the release checks locally, commit directly to `main`, tag the release, then
 
 ```bash
 git status --short
-pnpm run release:prepare -- v1.0.0
+pnpm run release:prepare -- vX.Y.Z
 pnpm run check:release
 pnpm run deploy:dry-run
 ```
@@ -36,21 +36,22 @@ Update:
 
 - `package.json`
 - `cloudflare/package.json`
+- `frontend/package.json`
 - `CHANGELOG.md`
 - `RELEASE_NOTES.md`
 
 ## 3. Tag
 
 ```bash
-git tag -a v1.0.0 -m "v1.0.0"
+git tag -a vX.Y.Z -m "vX.Y.Z"
 git push origin main --tags
 ```
 
 ## 4. Create GitHub Release
 
 ```bash
-gh release create v1.0.0 \
-  --title "v1.0.0" \
+gh release create vX.Y.Z \
+  --title "vX.Y.Z" \
   --notes-file RELEASE_NOTES.md
 ```
 

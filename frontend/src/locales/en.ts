@@ -126,6 +126,20 @@ export default {
       desc: "Add a remote subscription or local node text to start aggregating.",
       btn: "Create Subscription Now"
     },
+    onboarding: {
+      welcome: "First run",
+      title: "Create your first subscription link in three steps",
+      desc: "Your configuration stays in your Cloudflare D1 database. Add a source, create a collection, then copy a client link.",
+      addSource: "Add a remote subscription or local node text",
+      addCollection: "Review the default Daily collection or create one",
+      copyLink: "Copy a Mihomo, sing-box, or other download link",
+      createSource: "Add the first source",
+      openGuide: "Open the five-minute guide",
+      step2: "Next step · 2/3",
+      collectionTitle: "Create a collection",
+      collectionDesc: "If the default Daily collection was removed, create a collection to combine, deduplicate, and apply a routing template.",
+      createCollection: "Create collection"
+    },
     loadFailed: {
       title: "Unable to load data",
       desc: "If you just deployed the app, enter the admin token first. Otherwise, check the Worker API and network connection.",

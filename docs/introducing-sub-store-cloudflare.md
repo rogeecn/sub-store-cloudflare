@@ -39,7 +39,7 @@ sub-store-cloudflare 是一个跑在 Cloudflare Workers 上的订阅聚合工具
 
 ### Cloudflare 一键按钮
 
-点仓库首页的 Deploy to Cloudflare 按钮。Cloudflare 拉仓库、建 Worker、建 D1、问你要两个 token，部署完给你带 token 的管理链接。普通开源用户走这条，详细见 [deployment.md](deployment.md)。
+点仓库首页的 Deploy to Cloudflare 按钮。Cloudflare 导入仓库副本、建 Worker、建 D1，并要求填写两个不同的随机 token。部署完成后，把 admin token 临时加到 Worker 地址的 `?token=` 参数进入管理端。普通开源用户走这条，详细见 [quick-start.md](quick-start.md)。
 
 ### AI Agent 一键安装
 

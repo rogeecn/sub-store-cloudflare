@@ -6,6 +6,25 @@ This project follows semantic versioning where practical.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-11
+
+### Added
+
+- Added a guided interactive CLI setup, an explicit empty quick-install mode, and cross-platform deployment token generation.
+- Added a first-run admin checklist for Source, Collection, and client-link creation.
+- Added five-minute quick-start and upgrade guides for Deploy Button, Agent/CLI, D1 migrations, backup, and rollback.
+- Added installer helper tests and a deployment-experience release check.
+
+### Changed
+
+- Rebuilt the Chinese and English README files around a three-step ordinary-user deployment path.
+- Non-interactive installs without private setup now stop before deployment instead of risking example source import.
+- Deploy Button documentation now explains repository copies, required secrets, and upstream upgrade behavior.
+
+### Security
+
+- Removed the root `.dev.vars.example` that caused Cloudflare's Deploy form to prefill public placeholder values for required Worker Secrets.
+
 ## [1.0.0] - 2026-07-11
 
 ### Added
